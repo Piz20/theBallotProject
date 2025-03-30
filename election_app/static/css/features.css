@@ -1,0 +1,128 @@
+.container {
+  width: 1440px;
+  height: 1024px;
+  padding: 160px 451px 160px 195px;
+  background-color: white;
+  display: inline-flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.feature-box {
+  width: 794px;
+  height: 704px;
+  position: relative;
+}
+
+.rotate-line {
+  width: 668px;
+  height: 0;
+  left: 165.50px;
+  top: 686px;
+  position: absolute;
+  transform: rotate(-90deg);
+  transform-origin: 0 0;
+  background: #015FC7;
+  border: 7px solid #015FC7;
+}
+
+.title {
+  left: 0;
+  top: 571px;
+  position: absolute;
+  transform: rotate(-90deg);
+  transform-origin: 0 0;
+  color: black;
+  font-size: 115px;
+  font-family: "DM Serif Display", serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.feature-list {
+  width: 569px;
+  height: 704px;
+  left: 225px;
+  top: 0;
+  position: absolute;
+}
+
+.feature-item {
+  display: flex; /* Aligne icône et texte sur une ligne */
+  align-items: center; /* Centre verticalement l'icône et le texte */
+  margin-bottom: 40px; /* Espacement entre chaque élément */
+  color: #010029;
+  font-size: 30px; /* Taille du texte ajustée */
+  font-family: "DM Serif Display", serif;
+  font-weight: 400;
+}
+
+.feature-icon {
+  width: 100px; /* Augmente la largeur des icônes */
+  height: 100px; /* Augmente la hauteur des icônes */
+  margin-right: 15px; /* Espacement entre l'icône et le texte */
+}
+
+.feature-item:nth-child(1) { top: 10px; }
+.feature-item:nth-child(2) { top: 143px; }
+.feature-item:nth-child(3) { top: 271px; }
+.feature-item:nth-child(4) { top: 389px; }
+.feature-item:nth-child(5) { top: 516px; }
+.feature-item:nth-child(6) { top: 640px; }
+
+.slide-arrow {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #015FC7;
+    color: white;
+    padding: 10px 15px;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 1000;
+    border-radius: 5px 0 0 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.slide-arrow:hover {
+    background-color: #013f87;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.slide-panel {
+    position: fixed;
+    top: 0;
+    right: -70%;
+    width: 70%;
+    height: 100%;
+    background-color: #f9f9f9;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    transition: right 0.5s ease;
+    overflow: hidden;
+}
+
+.slide-content {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.5s ease;
+}
+
+.overlay.active {
+    visibility: visible;
+    opacity: 1;
+}

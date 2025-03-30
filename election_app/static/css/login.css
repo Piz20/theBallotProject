@@ -1,0 +1,126 @@
+/* Container pour la page de login */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #000;
+}
+
+.content {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+    max-width: 1200px;
+}
+
+/* Section gauche : Image */
+.left-section {
+    flex: 1;
+    padding: 20px;
+}
+
+.login-image {
+    width: 100%;
+    height: auto;
+}
+
+/* Section droite : Formulaire */
+.right-section {
+    flex: 1;
+    padding: 20px;
+    background-color: #000000;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-title {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Assurez-vous que tous les champs de formulaire ont la même largeur */
+.form-control {
+    width: 100%; /* Assure que tous les champs ont la même largeur */
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box; /* Assure que les paddings et bordures ne sont pas inclus dans la largeur */
+}
+
+/* Vous pouvez également réinitialiser certaines marges et paddings spécifiques pour éviter tout comportement indésirable */
+.form-group {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.form-group input {
+    width: 100%; /* S'assurer que les champs <input> ont la même largeur */
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.password-container {
+    display: flex;
+    align-items: center; /* Centrer verticalement les éléments */
+}
+
+.eye-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: -30px; /* Ajuste cette valeur si nécessaire */
+    margin-top: 8px;
+    display: flex;
+    align-items: center; /* S'assure que l'icône est centrée verticalement */
+}
+
+/* Lien de mot de passe oublié à gauche */
+.forgot-password {
+    display: block;
+    text-align: left; /* Aligner à gauche */
+    font-size: 14px;
+    color: #007bff;
+    text-decoration: none;
+}
+
+/* Aligner "Not a user?" et "Register now" à gauche */
+.register-text {
+    text-align: left; /* Aligner à gauche */
+}
+
+.not-a-user {
+    font-size: 14px;
+    color: white; /* Mettre la couleur du texte normal, ici blanc */
+}
+
+.register-now {
+    font-size: 14px;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.register-now:hover,
+.forgot-password:hover{
+    text-decoration: underline;
+}
+
+/* Bouton de soumission */
+.submit-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background-color: #0056b3;
+}

@@ -1,0 +1,415 @@
+/* Countdown Timer Container */
+.countdown-container {
+    text-align: center;
+    padding: 20px;
+    background-color: #001124;
+    color: white;
+    margin-bottom: 0;
+    border: none;
+    z-index: 100;
+}
+
+#countdown-title {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.countdown-timer {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Main container */
+.container {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'DM Serif Display', serif;
+    background: #001124;
+    color: white;
+    position: relative;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Section Candidates */
+.section-candidates {
+    margin: 20px 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+/* Add Candidate button styles */
+.add-candidate-btn {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.add-candidate-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Candidates list container */
+.candidates-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Candidate card styling */
+.candidate-card {
+    width: 300px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Effet de hover pour les cartes des candidats */
+.candidate-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Ombre plus prononcée */
+    opacity: 0.8; /* Légère transparence */
+    cursor: pointer;
+    transition: all 0.3s ease; /* Transition fluide */
+}
+
+/* Candidate photo styling */
+.candidate-photo img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+}
+
+/* Candidate info */
+.candidate-info {
+    margin-bottom: 15px;
+}
+
+.candidate-name {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #212529;
+}
+
+.candidate-bio {
+    font-size: 16px;
+    color: #6c757d;
+    line-height: 1.5;
+}
+.candidate-votes {
+    font-weight: bold;
+    color: #333;
+    margin-top: 5px;
+}
+
+/* Vote button */
+.vote-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.vote-btn:hover {
+    background-color: #218838;
+}
+
+/* Modal container */
+.modal-election {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding-top: 60px;
+}
+
+/* Modal content */
+.modal-content-election {
+    background-color: #001124;
+    margin: 5% auto;
+    padding: 40px;
+    border: 1px solid #888;
+    width: 70%;
+    max-width: 600px;
+    color: white;
+    border-radius: 8px;
+}
+
+/* Close button */
+.close-election {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-election:hover,
+.close-election:focus {
+    color: red;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Form styles */
+.modal-form-election input,
+.modal-form-election textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f2f2f2;
+}
+
+.modal-form-election button {
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.modal-form-election button:hover {
+    background-color: #45a049;
+}
+
+/* Error message styles */
+.error-container {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* Photo upload styles */
+.photo-upload-container {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.photo-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 15px;
+    border: 2px solid #ccc;
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-upload-btn {
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.photo-upload-btn:hover {
+    background-color: #45a049;
+}
+.voted-candidate {
+    background-color: #ccffcc; /* Fond vert clair */
+        border: 2px solid #00cc00; /* Bordure verte */
+
+    transition: all 0.3s ease; /* Animation pour un effet plus fluide */
+}
+.winners-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-evenly; /* Space out the winner cards */
+        gap: 20px; /* Optional: adds space between the cards */
+    }
+
+    .winner-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 150px; /* Adjust the width to your preference */
+        border: 1px solid #ccc; /* Optional: adds a border to the cards */
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        background-color: white;
+        color: black;
+    }
+
+    .winner-photo img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+    }
+
+    .winner-info {
+        margin-top: 10px;
+    }
+
+.remove-vote-btn {
+    background-color: #f44336; /* Red background */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.remove-vote-btn:hover {
+    background-color: #d32f2f;
+}
+.search-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.search-bar {
+    width: 60%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+.add-criteria-btn {
+    background-color: #013a8c;
+    color: white;
+    border: none;
+    border-radius: 5px; /* Arrondir les coins */
+    padding: 2px 2px;
+    font-size: 16px;
+    cursor: pointer; /* Ajout du curseur pointer */
+    transition: background-color 0.3s ease; /* Animation pour le hover */
+}
+
+.add-criteria-btn:hover {
+    background-color: #0250b4; /* Couleur plus claire au survol */
+}
+/* Modal Styling */
+.criteria-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow: auto;
+}
+
+.criteria-modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 50%;
+    max-width: 400px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    position: relative;
+}
+
+.criteria-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #000;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.criteria-modal-title {
+    margin-bottom: 20px;
+    color: #013a8c;
+}
+
+.criteria-label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 16px;
+    text-align: left;
+    color: #333;
+}
+
+.criteria-input {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.criteria-submit-btn {
+    background-color: #013a8c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.criteria-submit-btn:hover {
+    background-color: #0250b4;
+}
+
+.criteria-add-btn {
+    background-color: #013a8c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.criteria-add-btn:hover {
+    background-color: #0250b4;
+}

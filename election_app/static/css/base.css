@@ -1,0 +1,347 @@
+/* General Styles */
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    font-family: 'DM Serif Display', serif;
+    color: white;
+    padding-top: 80px; /* Space for fixed header */
+
+}
+
+/* Header Styles */
+header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 20px 40px;
+    margin:0 auto;
+    background: black;
+    width: 100%;
+    z-index: 10;
+
+}
+
+.menu {
+    display: flex;
+    gap: 40px;
+    margin-right: 20px;
+}
+
+.menu-item {
+    font-size: 25px;
+    text-decoration: none;
+    color: white;
+    position: relative;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.menu-item:hover {
+    transform: scale(1.1);
+}
+
+.menu-item::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background-color: #015FC7;
+    transition: width 0.3s ease;
+}
+
+.menu-item:hover::after {
+    width: 100%;
+}
+
+/* Login Button Styles */
+.login-box {
+    width: 119px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #015FC7;
+    border-radius: 6px;
+    margin-left: 30px;
+}
+
+.login-button {
+    font-size: 25px;
+    text-decoration: none;
+    color: white;
+    transition: transform 0.3s ease;
+}
+
+.login-button:hover {
+    transform: scale(1.1);
+}
+
+.login-button:active {
+    transform: scale(1.05);
+}
+
+/* Main Container */
+.container {
+    width: 100%;
+    height: auto;
+    position: relative;
+    background: black;
+    margin-top: 120px;
+}
+
+.content {
+    width: 1314px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 50px;
+}
+
+.left-section {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-right: 50px;
+}
+
+.main-image {
+    width: 100%;
+    max-width: 700px;
+    height: auto;
+}
+
+.right-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 50px;
+    padding-top: 50px;
+}
+
+.text-box {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.title .line1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.title .line2 {
+    font-size: 99px;
+    color: #015FC7;
+}
+
+/* Buttons Section */
+.buttons {
+    display: flex;
+    gap: 36px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.button {
+    width: 234px;
+    height: 59px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 25px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 400;
+    transition: transform 0.3s ease;
+}
+
+.button:hover {
+    transform: scale(1.1);
+}
+
+.button.register {
+    background: #0160C8;
+    color: #EBECED;
+}
+
+.button.read-more {
+    background: #004EA4;
+    color: white;
+}
+
+.button-text {
+    text-decoration: none;
+    color: white;
+}
+
+/* Footer Styles */
+footer {
+    width: 100%;
+    padding: 40px 20px;
+    background: black;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    margin-top: 20px;
+    overflow: hidden; /* Hide any overflow content */
+    flex-wrap: wrap; /* Ensure the content wraps if it exceeds the height */
+}
+
+.footer-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+}
+
+.footer-links {
+    display: flex;
+    gap: 20px;
+    font-size: 16px;
+}
+
+.footer-links a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: #015FC7;
+}
+
+.social-icons {
+    display: flex;
+    gap: 20px;
+}
+
+.social-icons a {
+    width: 30px;
+    height: 30px;
+    background-color: white;
+    border-radius: 50%;
+    display: block;
+    background-size: cover;
+    transition: transform 0.3s;
+}
+
+.icon-facebook {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg');
+}
+
+.icon-instagram {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg');
+}
+
+.social-icons a:hover {
+    transform: scale(1.1);
+}
+
+.footer-separator {
+    height: 50px;
+    width: 2px;
+    background-color: white;
+    margin: 0 20px;
+}
+
+.footer-separator-horizontal {
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    margin: 20px 0;
+}
+
+/* Ensuring content in footer wraps appropriately */
+@media (max-width: 768px) {
+    footer {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px 10px;
+        max-height: none; /* Remove max-height on smaller screens */
+    }
+
+    .footer-separator {
+        display: none;
+    }
+
+    .footer-section {
+        margin-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .footer-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .footer-links a {
+        font-size: 14px;
+    }
+}
+
+/* Text Animation */
+@keyframes typing {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+@keyframes blink {
+    50% {
+        border-color: transparent;
+    }
+}
+
+#typing-effect {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 2px solid blue;
+    padding-right: 5px;
+    animation: typing 3s steps(30) 1s infinite normal both, blink 0.75s step-end infinite;
+}
+
+ .popup-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .popup-content {
+        background: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+
+    .popup-content button {
+        margin: 5px;
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .popup-content h3 {
+    color: #333;  /* Couleur du texte, assurez-vous qu'elle contraste bien */
+    font-size: 18px;  /* Taille du texte */
+}

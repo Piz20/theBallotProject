@@ -1,0 +1,159 @@
+/* Styles pour la page d'inscription */
+.registration-container {
+  width: 100%;
+  height: 100vh;
+  background-color: #001124;
+  display: flex;
+  justify-content: space-between; /* Espace entre l'image et le formulaire */
+  align-items: center; /* Centre verticalement */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden; /* Évite les débordements visuels */
+}
+
+.left-section {
+  flex: 1; /* Permet à l'image de prendre l'espace disponible à gauche */
+  display: flex;
+  justify-content: center; /* Centre horizontalement */
+  align-items: center; /* Centre verticalement */
+  padding-right: 50px; /* Ajuste l'espace entre l'image et le formulaire */
+}
+
+.registration-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain; /* S'assure que l'image s'adapte bien à l'espace disponible */
+  border-radius: 8px;
+}
+
+.registration-box {
+  flex: 0 0 400px; /* Largeur fixe pour le formulaire */
+  max-height: 85vh; /* Limite la hauteur à 85% de la fenêtre */
+  overflow-y: auto; /* Active le défilement vertical si nécessaire */
+  padding: 20px;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-left: 50px; /* Ajoute une marge entre le formulaire et l'image */
+}
+
+h2 {
+  text-align: center;
+  color: #2F2E41;
+  font-size: 22px;
+  font-family: 'Arial', sans-serif;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 16px;
+  color: #2F2E41;
+  font-family: 'Arial', sans-serif;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  width: calc(100% - 40px); /* Réserve de l'espace pour l'icône */
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.password-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.password-container input {
+  flex: 1;
+  padding-right: 40px; /* Assure un espace pour l'icône */
+}
+
+.password-container .toggle-button {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #333;
+}
+
+.password-container .toggle-button i {
+  font-size: 1.2rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #015FC7;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+  color: white;
+  background-color: #015FC7;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+  background-color: #013F92;
+}
+
+.submit-button:active {
+  background-color: #012B6D;
+}
+
+/* Messages d'erreur */
+.error-list {
+  margin-top: 5px;
+  list-style: none;
+  padding: 0;
+}
+
+.error-message {
+  color: #d9534f;
+  font-size: 14px;
+}
+
+/* Media query pour petits écrans */
+@media (max-width: 768px) {
+  .registration-container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .left-section {
+    padding-right: 0;
+    margin-bottom: 20px;
+  }
+
+  .registration-box {
+    width: 90%;
+    padding: 15px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .form-group input {
+    font-size: 14px;
+  }
+
+  .submit-button {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,201 @@
+{% extends "election_app/base.html" %}
+{% load static %}
+{% load election_filters %}
+
+{% block title %}Election Details{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/election_details.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+{% endblock %}
+
+{% block content %}
+    <div class="countdown-container">
+        <h1 id="countdown-title"></h1>
+        <div id="countdown-timer" class="countdown-timer"></div>
+    </div>
+
+    <div class="container">
+        <main class="content">
+            <!-- Section for displaying candidates -->
+            <section class="section-candidates">
+                <h2 class="section-title">Candidates</h2>
+                {% if now <= election.end_date %}
+                    <button class="add-candidate-btn" id="addCandidateBtn" onclick="openModalCandidate()">Add
+                        Candidate
+                    </button>
+                {% endif %}
+                <div class="search-container">
+                    <input
+                            type="text"
+                            id="candidateSearchBar"
+                            class="search-bar"
+                            placeholder="Search a candidate"
+                            oninput="filterCandidates(this.value)"
+                    />
+                    <button class="add-criteria-btn" onclick="openCriteriaModal()">Add eligibility criterias</button>
+                </div>
+
+                <div class="winner-container">
+                    {% if now < election.end_date %}
+                        <h2 class="winner-title">Provisional Winners</h2>
+                    {% else %}
+                        <h2 class="winner-title">Final Winners</h2>
+                    {% endif %}
+
+                    {% if winners %}
+                        <div class="winners-list">
+                            {% for winner in winners %}
+                                <div class="winner-card">
+                                    <div class="winner-photo">
+                                        {% if winner.profile_picture %}
+                                            <img src="{{ winner.profile_picture.url }}"
+                                                 alt="Photo of {{ winner.name }}">
+                                        {% else %}
+                                            <img src="{% static 'images/default_profile_pic.png' %}"
+                                                 alt="Photo of {{ winner.name }}">
+                                        {% endif %}
+                                    </div>
+                                    <div class="winner-info">
+                                        <h3>{{ winner.name }}</h3>
+                                        <p>Votes: {{ winner.vote_count }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>No winners yet.</p>
+                    {% endif %}
+                </div>
+
+                {% if candidates %}
+                    <div class="candidates-list" id="candidatesList">
+                        {% for candidate in candidates %}
+                            <div class="candidate-card {% if has_voted|get_item:candidate.id %}voted-candidate{% endif %}"
+                                 id="candidate-card-{{ candidate.id }}">
+                                <div class="candidate-photo">
+                                    {% if candidate.profile_picture %}
+                                        <img src="{{ candidate.profile_picture.url }}"
+                                             alt="Photo of {{ candidate.name }}">
+                                    {% else %}
+                                        <img src="{% static 'images/default_profile_pic.png' %}"
+                                             alt="Photo of {{ candidate.name }}">
+                                    {% endif %}
+                                </div>
+                                <div class="candidate-info">
+                                    <h3 class="candidate-name">{{ candidate.name }}</h3>
+                                    <p class="candidate-bio">{{ candidate.bio }}</p>
+
+                                    {% if now >= election.start_date %}
+                                        <p class="candidate-votes" id="candidate-votes-{{ candidate.id }}">
+                                            Number of votes: {{ candidate.vote_count }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+
+                                {% if has_voted|get_item:candidate.id %}
+                                    <!-- If the user has already voted for this candidate -->
+                                    <button class="vote-btn" style="display:none;">You have voted for this candidate
+                                    </button>
+                                    {% if now < election.end_date %}
+                                        <button class="remove-vote-btn" data-candidate-id="{{ candidate.id }}"
+                                                data-candidate-name="{{ candidate.name }}" onclick="removeVote(this)">
+                                            Remove
+                                            vote for {{ candidate.name }}</button>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- If the user has not voted yet -->
+                                    {% if now < election.end_date %}
+                                        <button class="vote-btn"
+                                                data-candidate-id="{{ candidate.id }}"
+                                                data-candidate-name="{{ candidate.name }}"
+                                                onclick="confirmVote(this)">
+                                            Vote for {{ candidate.name }}
+                                        </button>
+                                    {% else %}
+                                        <p>The election has ended. Voting is no longer available.</p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No candidates available for this election.</p>
+                {% endif %}
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Popup for Candidate Creation -->
+    <div id="candidateModal" class="modal-election">
+        <div class="modal-content-election">
+            <span class="close-election" onclick="closeModalCandidate()">&times;</span>
+            <h2>Create Candidate</h2>
+            <form class="modal-form-election" id="createCandidateForm" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <!-- Candidate Photo -->
+                <label for="profile_picture">Candidate Photo:</label>
+                <div class="photo-upload-container">
+                    <div class="photo-preview" id="photoPreview">
+                        <img id="photoPreviewImage" src="
+
+
+
+
+                                {% if form.profile_picture.value %}{{ form.profile_picture.value }}{% else %}{% static 'images/default_profile_pic.png' %}{% endif %}"
+                             alt="Candidate Photo">
+                    </div>
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*"
+                           onchange="previewPhoto(event)" hidden>
+                    <label for="profile_picture" class="photo-upload-btn">
+                        <i class="fa fa-camera"></i> Click to Choose Photo
+                    </label>
+                </div>
+                <div class="error-container" id="error-profile_picture"></div>
+
+                <!-- Candidate Name -->
+                <label for="name">Candidate Name:</label>
+                <input type="text" id="name" name="name" value="{{ form.name.value|default:'' }}" required>
+                <div class="error-container" id="error-name"></div>
+
+                <!-- Candidate Bio -->
+                <label for="bio">Bio:</label>
+                <textarea id="bio" name="bio" rows="4" required>{{ form.bio.value|default:'' }}</textarea>
+                <div class="error-container" id="error-bio"></div>
+
+                <!-- Submit Button -->
+                <button type="submit">Create Candidate</button>
+            </form>
+        </div>
+    </div>
+<!-- Modal Structure -->
+<div id="criteriaModal" class="criteria-modal">
+    <div class="criteria-modal-content">
+        <span class="criteria-close-btn" onclick="closeCriteriaModal()">&times;</span>
+        <h2 class="criteria-modal-title">Add Eligibility Criteria</h2>
+        <form id="criteriaForm" method="post" action="" class="criteria-form">
+            {% csrf_token %}
+            <label for="criteriaInput" class="criteria-label">Criteria:</label>
+            <input type="text" id="criteriaInput" name="criteria" placeholder="Enter criteria" required class="criteria-input">
+            <button type="submit" class="criteria-submit-btn">Generate Query</button>
+        </form>
+    </div>
+</div>
+
+
+    <script>
+        const formActionUrl = "{% url 'add_candidate' election.id %}";
+        window.electionId = "{{ election.id }}";  // Injecter l'ID de l'élection
+        <!-- Passer la variable previous_candidate_name à JavaScript -->
+
+        // Inclure les dates dans le HTML pour utilisation dans le JavaScript
+        const electionStartDate = new Date("{{ election.start_date|date:'Y-m-d H:i:s' }}");
+        const electionEndDate = new Date("{{ election.end_date|date:'Y-m-d H:i:s' }}");
+    </script>
+
+    <script src="{% static 'js/election_details.js' %}" defer></script>
+{% endblock %}
