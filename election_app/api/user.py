@@ -67,3 +67,17 @@ class UserViewSet(viewsets.GenericViewSet):
                 'user': serializer.data
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def list(self, request, *args, **kwargs):
+        """Retrieve a list of users."""
+        users = self.get_queryset()
+        data = {
+            'users': UserSerializer(users, many=True).data,
+        }
+        return Response(data)
+
+    def retrieve(self, request, pk=None):
+        """Retrieve a single user."""
+        user = self.get_object()
+        serializer = UserSerializer(user)
+        return Response(serializer.data)

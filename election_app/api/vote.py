@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from ..models import Candidate, Vote
 from .serializers import VoteSerializer
@@ -7,8 +8,6 @@ from .serializers import VoteSerializer
 class VoteViewSet(viewsets.ModelViewSet):
     queryset = Vote.objects.all()
     serializer_class = VoteSerializer
-    # Supprimer ou commenter cette ligne pour tester sans authentification
-    # permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         candidate_id = request.data.get('candidate_id')
@@ -47,3 +46,22 @@ class VoteViewSet(viewsets.ModelViewSet):
         candidate.save()
 
         return Response({'success': True, 'message': 'Your vote has been recorded successfully.'}, status=status.HTTP_201_CREATED)
+
+
+    def destroy(self, request, *args, **kwargs):
+        """Supprimer le vote de l'utilisateur authentifié."""
+        vote = self.get_object()  # Utiliser la méthode pour récupérer l'objet avec l'ID passé dans l'URL
+
+        # Vérifier si le vote appartient à l'utilisateur authentifié
+        if vote.user != request.user:
+            return Response({'error': 'You can only delete your own vote.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Mettre à jour le nombre de votes du candidat
+        vote.candidate.vote_count -= 1
+        vote.candidate.save()
+
+        # Supprimer le vote
+        vote.delete()
+
+        return Response({'success': 'Your vote has been successfully deleted.'}, status=status.HTTP_200_OK)
+

@@ -7,7 +7,7 @@
     padding-bottom: 178px;
     padding-left: 147px;
     padding-right: 148px;
-    background: #001124;
+    background: whitesmoke;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -27,8 +27,8 @@
     position: absolute;
     transform: rotate(-90deg);
     transform-origin: 0 0;
-    background: white;
-    border: 7px solid white;
+    background: black;
+    border: 7px solid black;
 }
 
 .about-title {
@@ -37,7 +37,7 @@
     position: absolute;
     transform: rotate(-90deg);
     transform-origin: 0 0;
-    color: white;
+    color: black;
     font-size: 115px;
     font-family: 'DM Serif Display', serif;
     font-weight: 400;
@@ -55,7 +55,7 @@
     top: 21px;
     position: absolute;
     text-align: justify;
-    color: white;
+    color: black;
     font-size: 40px;
     font-family: 'DM Serif Display', serif;
     font-weight: 400;

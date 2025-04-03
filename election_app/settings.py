@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'election_app.apps.ElectionAppConfig',
-    
+    'rest_framework.authtoken',
+
     'rest_framework',
     'corsheaders',  # Pour gérer les requêtes entre domaines différents (CORS)
 ]
@@ -101,7 +102,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'electionapp',  # Nom de la base de données
-        'HOST': 'PIZ-DELL\\SQLEXPRESS',  # Serveur local
+        'HOST': 'localhost\SQLEXPRESS03',  # Serveur local
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',  # Pilote ODBC
             'TrustServerCertificate': 'yes',
@@ -188,6 +189,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',  # Change en IsAuthenticated si besoin
