@@ -1,12 +1,22 @@
-from google import genai
-import pyodbc
+from fastapi import FastAPI
 from sqlalchemy import create_engine, text
+import google as genai
+import pandas as pd
+import json
 
-def initialize_genai_client(api_key):
-    return genai.Client(api_key=api_key)
+app = FastAPI()
 
-def generate_sql_query(client, query):
-    schema_bd = """
+# Configuration Google Gemini
+genai.Client(api_key="AIzaSyA_LLcHUt9wGtdX7wDOAbwtB5y4pzj9drY")
+
+# Connexion SQL Server
+server = 'localhost\\SQLEXPRESS03'
+database = 'electionapp'
+connection_string = f"mssql+pyodbc://@{server}/{database}?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
+engine = create_engine(connection_string)
+
+# Définition du schéma de la BD (extrait)
+schema_bd = """
 Le schéma de la base de données est le suivant :
 Tables et colonnes :
 - **auth_group** : (id: int, PRIMARY KEY), (name: nvarchar(150), UNIQUE)
@@ -26,54 +36,26 @@ Tables et colonnes :
 - **election_app_vote** : (id: bigint, PRIMARY KEY), (candidate_id: int, FOREIGN KEY), (user_id: bigint, FOREIGN KEY)
 """
 
-    prompt = (
-        f"Generate an optimized SQL Server query for the following request based on this db schema {schema_bd} . Give me just the query without any comments. Don't add any other character, nothing. "
-        "Ensure it follows SQL Server syntax strictly: " + query
-    )
-    response = client.models.generate_content(
-        model="gemini-2.0-flash", 
-        contents=prompt)
+def generate_sql_query(prompt):
+    """Utilise Google Gemini pour générer une requête SQL basée sur le prompt."""
+    request = f"Crée une requête SQL Server optimisée pour cette base de données : {schema_bd}. La requête doit répondre à : {prompt}. Ne renvoie que la requête SQL."
+    
+    response = genai.GenerativeModel("gemini-1.5-flash").generate_content(request)
+    
+    return response.text.strip().replace("```sql", "").replace("```", "").strip()
 
-    return response.text.strip()
-
-def create_db_connection(server, database):
-    connection_string = (
-        f"mssql+pyodbc://@{server}/{database}?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
-    )
-    return create_engine(connection_string)
-
-def execute_sql_query(engine, query):
-    with engine.connect() as connection:
-        result = connection.execute(text(query))
-        return result.fetchall()
-
-def main():
-    api_key = "AIzaSyA_LLcHUt9wGtdX7wDOAbwtB5y4pzj9drY"
-    client = initialize_genai_client(api_key)
-
-    query = (
-        "selectionne tous les ages des des users en format annee du style 15 ans 20 ans "
-    )
-    
-    generated_sql = generate_sql_query(client, query)
-    
-    generated_sql = generated_sql.replace("```", "").replace("sql", "").strip()
-    
-    
-    print("=========================================================Requête SQL générée :", generated_sql)
-    
-    server = 'localhost\\SQLEXPRESS03'
-    database = 'electionapp'
-    
-    engine = create_db_connection(server, database)
+@app.get("/query")
+def execute_prompt(prompt: str):
+    """Exécute une requête SQL générée par IA et renvoie les données JSON."""
+    sql_query = generate_sql_query(prompt)
     
     try:
-        rows = execute_sql_query(engine, generated_sql)
-        print("=========================================================================Résultats de la requête SQL :")
-        for row in rows:
-            print(row)
+        with engine.connect() as connection:
+            result = connection.execute(text(sql_query))
+            df = pd.DataFrame(result.fetchall(), columns=result.keys())
+        
+        return {"query": sql_query, "data": df.to_dict(orient="records")}
     except Exception as e:
-        print("Erreur lors de l'exécution de la requête SQL :", str(e))
+        return {"error": str(e)}
 
-if __name__ == "__main__":
-    main()
+# Lancer l'API avec : uvicorn server:app --reload --host 0.0.0.0 --port 8000

@@ -3,10 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Graphique - Chiens vs Chats</title>
+    <title>Graphiques dynamiques avec D3.js</title>
 </head>
 <body>
-    <svg width="500" height="700"></svg>
-    <script src="dist/bundle.js"></script> <!-- Charger le fichier généré par Webpack -->
+    <h2>Générateur de Graphiques</h2>
+    <input type="text" id="prompt" placeholder="Ex: histogramme rouge, pie chart bleu...">
+    <button onclick="generateGraph()">Générer</button>
+
+    <svg width="500" height="500"></svg>
+
+    <script src="dist/bundle.js"></script> <!-- Webpack génère ce fichier -->
 </body>
 </html>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
