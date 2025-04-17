@@ -1,20 +1,62 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Graphiques dynamiques avec D3.js</title>
+  <meta charset="UTF-8">
+  <title>Graphiques dynamiques</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #f2f2f2;
+    }
+    #promptInput {
+      width: 70%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #submitBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    #chartContainer {
+      margin-top: 40px;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
 <body>
-    <h2>Générateur de Graphiques</h2>
-    <input type="text" id="prompt" placeholder="Ex: histogramme rouge, pie chart bleu...">
-    <button onclick="generateGraph()">Générer</button>
 
-    <svg width="500" height="500"></svg>
+  <h1>Création de graphiques par IA 📊</h1>
+  <input type="text" id="promptInput" placeholder="Pose ta question (ex: Evolution des ventes par mois)">
+  <button id="submitBtn">Envoyer</button>
 
-    <script src="dist/bundle.js"></script> <!-- Webpack génère ce fichier -->
+  <div id="chartContainer"></div>
+
+  <script>
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const prompt = document.getElementById("promptInput").value.trim();
+      const container = document.getElementById("chartContainer");
+
+      if (!prompt) {
+        alert("Merci de saisir une question.");
+        return;
+      }
+
+      container.innerHTML = "<p>Chargement en cours...</p>";
+
+      try {
+        const response = await fetch(`http://localhost:8000/api/query/run_for_graphs/?prompt=${encodeURIComponent(prompt)}`);
+        const html = await response.text();
+        container.innerHTML = html;
+      } catch (error) {
+        container.innerHTML = `<p style="color:red;">Erreur lors du chargement du graphique : ${error}</p>`;
+      }
+    });
+  </script>
+
 </body>
 </html>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>

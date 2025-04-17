@@ -25,7 +25,7 @@ from .views import remove_vote_view
 
 from rest_framework.routers import DefaultRouter
 
-from election_app.api import election , candidate , vote , user
+from election_app.api import election , candidate , vote , user , query_generator
 
 
 router = DefaultRouter()
@@ -34,6 +34,7 @@ router.register(r'elections', election.ElectionViewSet, basename='election')
 router.register(r'candidates', candidate.CandidateViewSet, basename='candidate') 
 router.register(r'votes', vote.VoteViewSet, basename='vote')
 router.register(r'users', user.UserViewSet,basename='user')
+router.register(r'query', query_generator.QueryViewSet, basename='query')
 
 
 

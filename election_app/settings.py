@@ -56,6 +56,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -63,13 +65,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    
 ]
 
-# CORS Configuration : autoriser les requêtes depuis WordPress
 CORS_ALLOWED_ORIGINS = [
-    "https://theballotproject.local",  # Remplace par l'URL de ton site WordPress
-    "http://localhost:8000",  # Pour le développement
+    "http://localhost:8080",
+    'http://127.0.0.1:8080',  # Ajoute cette ligne pour autoriser ton frontend local
+
 ]
 
 ROOT_URLCONF = 'election_app.urls'

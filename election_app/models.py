@@ -63,7 +63,7 @@ class Election(models.Model):
     description = models.TextField(validators=[MaxLengthValidator(1000)], null=False, blank=False)
     start_date = models.DateTimeField(validators=[validate_future_date])
     end_date = models.DateTimeField(validators=[validate_future_date])
-    voters = models.ManyToManyField(CustomUser, related_name='voted_elections', blank=True)
+    eligible_voters = models.ManyToManyField(CustomUser, related_name='eligible_elections', blank=True)
 
     def clean(self):
         """Ensure start_date is before end_date."""
@@ -85,41 +85,44 @@ class Election(models.Model):
             ),
         ]
 
+
 class Candidate(models.Model):
     id = models.AutoField(primary_key=True)
     election = models.ForeignKey(
         Election,
         on_delete=models.CASCADE,
-        related_name='candidates'  # Reverse relationship accessible via `election.candidates`
+        related_name='candidates'  # Relation inverse accessible via `election.candidates`
     )
     name = models.CharField(max_length=255)
     bio = models.TextField(max_length=1000, null=False, blank=False)
     vote_count = models.IntegerField(default=0)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # Date de création du candidat
 
     def __str__(self):
         return f"{self.name} - {self.election.name}"
+
+    class Meta:
+        ordering = ['created_at']  # Optionnel : pour trier les candidats par date de création
 
 
 class Vote(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE)
+    election = models.ForeignKey(Election, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now=True)  # auto_now = mise à jour à chaque changement
+
+    class Meta:
+        unique_together = ('user', 'election')  # Empêche les doublons
 
     def clean(self):
-        """Ensure a user can only vote once per election, but can change their vote."""
-        # Vérifiez si l'utilisateur a déjà voté dans cette élection
-        existing_vote = Vote.objects.filter(user=self.user, candidate__election=self.candidate.election)
-
-        # Si l'utilisateur a déjà voté pour un autre candidat, on lui permet de changer de vote
-        if existing_vote.exists():
-            if existing_vote.first().candidate != self.candidate:
-                pass  # L'utilisateur change son vote, donc aucune validation n'est nécessaire
-            else:
-                pass  # L'utilisateur a déjà voté pour le même candidat, rien à faire
+        # Assure que le candidat appartient bien à l’élection
+        if self.candidate.election != self.election:
+            raise ValidationError("Le candidat sélectionné ne fait pas partie de cette élection.")
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.full_clean()  # Appelle clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.user.email} -> {self.candidate.name}"
+        return f"{self.user.email} a voté pour {self.candidate.name} ({self.election.name})"
