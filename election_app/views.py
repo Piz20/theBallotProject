@@ -313,3 +313,5 @@ def features_view(request):
 def help_view(request):
     return render(request, 'election_app/help.html')
 
+def gemini_view(request):
+    return render(request , 'election_app/gemini/index.html')

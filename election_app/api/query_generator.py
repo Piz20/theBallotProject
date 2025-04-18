@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from sqlalchemy import create_engine, text
 from google import genai
-import utils
+from election_app.api.utils import reformat_html
 import pandas as pd
 
 # Clé API Gemini
@@ -119,10 +119,9 @@ class QueryViewSet(viewsets.ViewSet):
             # Générer le code D3.js avec les données réelles
             html_content = generate_d3_code(prompt, data)
             
-            html_content = reformat_html(html_content)  # Appel à la fonction de reformattage
+            reformatedHTML = reformat_html(html_content)
 
-            # Retourner le code HTML généré dans la réponse
-            return Response(html_content, content_type="text/html")
+            return Response(reformatedHTML, content_type="text/html")
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

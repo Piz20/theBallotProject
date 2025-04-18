@@ -1,32 +1,48 @@
+{% load static%}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <title>Graphiques dynamiques</title>
+  <script src="{% static 'js/utils.js' %}"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 40px;
-      background-color: #f2f2f2;
-    }
-    #promptInput {
-      width: 70%;
-      padding: 10px;
-      font-size: 16px;
-    }
-    #submitBtn {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-left: 10px;
-      cursor: pointer;
-    }
-    #chartContainer {
-      margin-top: 40px;
-      background: white;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-  </style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+      }
+    
+      body {
+        padding: 40px;
+        box-sizing: border-box;
+      }
+    
+      #promptInput {
+        width: 70%;
+        padding: 10px;
+        font-size: 16px;
+      }
+    
+      #submitBtn {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+    
+      #chartContainer {
+        flex: 1;
+        margin-top: 40px;
+        background: white;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        overflow: auto; /* Permet de scroller si besoin */
+        max-height: 100%;
+      }
+    </style>    
 </head>
 <body>
 
@@ -51,7 +67,9 @@
       try {
         const response = await fetch(`http://localhost:8000/api/query/run_for_graphs/?prompt=${encodeURIComponent(prompt)}`);
         const html = await response.text();
-        container.innerHTML = html;
+        reformatedHTML = reformatHTML(html)
+        console.log(reformatedHTML)
+        container.innerHTML = reformatedHTML;
       } catch (error) {
         container.innerHTML = `<p style="color:red;">Erreur lors du chargement du graphique : ${error}</p>`;
       }

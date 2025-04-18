@@ -66,7 +66,7 @@ urlpatterns = [
                   path('election/<int:election_id>/vote/<int:candidate_id>/', views.vote_view, name='vote'),
                   path('remove_vote/<int:candidate_id>/', remove_vote_view, name='remove_vote'),
                   path('help/', views.help_view, name='help'),
-                  
+                  path('gemini/', views.gemini_view, name='gemini'),
                       path('api/', include(router.urls)),  # Inclure les URLs du routeur
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
