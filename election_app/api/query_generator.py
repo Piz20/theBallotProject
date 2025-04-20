@@ -67,7 +67,7 @@ def get_data_from_db(prompt):
 def generate_d3_code(prompt, data):
     request = f"""  
      Voici le schéma de ma base de données {schema_bd} ,
-     donne-moi le code HTML avec un beau css , et une legende du graphique , bref quelque chose de tres detaille , une belle mise en page intelligente du graphique en utilisant d3js qui peut illustrer la requête suivante : {prompt}
+     donne-moi le code HTML avec un beau css , et une legende du graphique , bref quelque chose de tres detaille meme lorsqu on survol avec la souris , une belle mise en page intelligente du graphique en utilisant d3js qui peut illustrer la requête suivante : {prompt}
      Voici les données associées : {data}
      
      surtout n ajoute aucun commentaire je veux juste le code executable dans le navigateur

@@ -43,24 +43,35 @@
       cursor: pointer;
     }
 
-    .chart-container {
-      flex: 1;
-      margin-top: 40px;
-      background: white;
-      padding: 20px;
-      border: 2px dashed #ccc;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      overflow: auto;
-      max-height: 100%;
-      min-height: 400px;
-    }
-
+    /* Style pour l'iframe : occuper toute la largeur et hauteur nécessaire */
     iframe {
       width: 100%;
-      height: 600px;
       border: none;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      display: block;
     }
 
+    /* Style pour le loader */
+    .loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 4px solid #f3f3f3; /* Couleur de fond */
+      border-top: 4px solid #3498db; /* Couleur de la barre de progression */
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 2s linear infinite;
+      display: none; /* Le loader est caché par défaut */
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Empêche l'affichage du texte de l'iframe qui pourrait déborder */
     .error {
       color: red;
     }
@@ -75,49 +86,74 @@
     <button id="submitBtn">Envoyer</button>
   </div>
 
-  <div class="chart-container" id="chartContainer">
-    <!-- Le graphique s'affichera ici dans un iframe -->
-  </div>
+  <!-- Loader caché par défaut, il apparaîtra au clic sur "Envoyer" -->
+  <div id="loader" class="loader"></div>
+
+  <!-- L'iframe où le graphique sera affiché -->
+  <iframe id="resultIframe" style="display:none;"></iframe>
 
   <script>
     document.getElementById("submitBtn").addEventListener("click", async () => {
       const prompt = document.getElementById("promptInput").value.trim();
-      const container = document.getElementById("chartContainer");
+      const iframe = document.getElementById("resultIframe");
+      const loader = document.getElementById("loader");
 
       if (!prompt) {
         alert("Merci de saisir une question.");
         return;
       }
 
-      container.innerHTML = "<p>Chargement en cours...</p>";
+      // Afficher le loader pendant le processus de chargement
+      loader.style.display = "block";
+      iframe.style.display = "none"; // Masquer l'iframe avant de charger
+      iframe.srcdoc = ""; // Réinitialiser le contenu de l'iframe
 
       try {
         const response = await fetch(`http://localhost:8000/api/query/run_for_graphs/?prompt=${encodeURIComponent(prompt)}`);
 
         if (!response.ok) {
-          container.innerHTML = `<p class="error">Erreur de chargement : ${response.statusText}</p>`;
+          iframe.style.display = "none"; // Masquer l'iframe en cas d'erreur
+          loader.style.display = "none"; // Masquer le loader en cas d'erreur
+          alert(`Erreur de chargement : ${response.statusText}`);
           return;
         }
 
         let html = await response.text();
+        html = reformatHTML(html); // Assurez-vous d'avoir la fonction reformatHTML pour corriger le HTML
 
-        html = reformatHTML(html); // Reformate le HTML proprement
+        // Ajout du script pour redimensionner l'iframe dynamiquement
+        const autoResizeScript = `
+          <script>
+            function resizeIframe() {
+              const height = document.body.scrollHeight;
+              window.parent.postMessage({ type: 'resize-iframe', height }, '*');
+            }
+            window.addEventListener('load', resizeIframe);
+            window.addEventListener('resize', resizeIframe);
+            setTimeout(resizeIframe, 100);
+          <\/script>
+        `;
 
-        console.log("HTML reformatté :", html); // Debug
+        const finalHtml = html + autoResizeScript;
 
-        // Création et configuration de l'iframe
-        const iframe = document.createElement("iframe");
-        iframe.srcdoc = html;
-        iframe.style.width = "100%";
-        iframe.style.height = "600px";
-        iframe.style.border = "none";
-
-        // Insertion dans le container
-        container.innerHTML = "";
-        container.appendChild(iframe);
+        iframe.srcdoc = finalHtml;
+        iframe.style.display = "block"; // Afficher l'iframe une fois le contenu chargé
+        loader.style.display = "none"; // Masquer le loader une fois le contenu chargé
 
       } catch (error) {
-        container.innerHTML = `<p class="error">Erreur lors du chargement du graphique : ${error.message}</p>`;
+        iframe.style.display = "none"; // Masquer l'iframe en cas d'erreur
+        loader.style.display = "none"; // Masquer le loader en cas d'erreur
+        alert(`Erreur lors du chargement du graphique : ${error.message}`);
+      }
+    });
+
+    // Adapter dynamiquement la hauteur de l'iframe
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.type === 'resize-iframe') {
+        const iframe = document.getElementById("resultIframe");
+        if (iframe) {
+          iframe.style.height = event.data.height + "px";
+        }
       }
     });
   </script>
