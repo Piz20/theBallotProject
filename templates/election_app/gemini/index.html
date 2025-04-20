@@ -7,6 +7,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Création de Graphiques avec IA</title>
 
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
   <script src="{% static 'js/utils.js' %}"></script>
 
   <style>
@@ -28,10 +33,11 @@
       display: flex;
       justify-content: flex-start;
       margin-bottom: 20px;
+      width: 70%;
     }
 
     .prompt-container input {
-      width: 70%;
+      width: 100%;
       padding: 10px;
       font-size: 16px;
     }
@@ -43,7 +49,13 @@
       cursor: pointer;
     }
 
-    /* Style pour l'iframe : occuper toute la largeur et hauteur nécessaire */
+    /* Tooltip décalé par rapport à la zone de texte */
+    .info-tooltip {
+      margin-left: 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
     iframe {
       width: 100%;
       border: none;
@@ -51,19 +63,18 @@
       display: block;
     }
 
-    /* Style pour le loader */
     .loader {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      border: 4px solid #f3f3f3; /* Couleur de fond */
-      border-top: 4px solid #3498db; /* Couleur de la barre de progression */
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
       border-radius: 50%;
       width: 50px;
       height: 50px;
       animation: spin 2s linear infinite;
-      display: none; /* Le loader est caché par défaut */
+      display: none;
     }
 
     @keyframes spin {
@@ -71,28 +82,48 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    /* Empêche l'affichage du texte de l'iframe qui pourrait déborder */
     .error {
       color: red;
     }
-  </style>
+</style>
+
+
 </head>
 <body>
 
   <h1>Création de graphiques par IA 📊</h1>
 
   <div class="prompt-container">
-    <input type="text" id="promptInput" placeholder="Pose ta question (ex: Évolution des ventes par mois)">
+    <input 
+      type="text" 
+      id="promptInput" 
+      placeholder="(Version test) Pose ta question, précise si tu veux un graphique ou non." 
+    >
+    
+    <!-- Icône d'information Bootstrap avec tooltip -->
+    <i 
+      class="bi bi-info-circle-fill text-primary"
+      data-bs-toggle="tooltip"
+      data-bs-placement="right"
+      title="⚠️ Ceci est une version test : l'IA peut se tromper dans le choix ou l'exactitude du graphique."
+      style="font-size: 1.5rem; cursor: pointer;">
+    </i>
+
     <button id="submitBtn">Envoyer</button>
   </div>
 
-  <!-- Loader caché par défaut, il apparaîtra au clic sur "Envoyer" -->
   <div id="loader" class="loader"></div>
-
-  <!-- L'iframe où le graphique sera affiché -->
   <iframe id="resultIframe" style="display:none;"></iframe>
 
+  <!-- Bootstrap JS pour activer les tooltips -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // Active les tooltips Bootstrap
+    document.addEventListener('DOMContentLoaded', function () {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      [...tooltipTriggerList].forEach(el => new bootstrap.Tooltip(el));
+    });
+
     document.getElementById("submitBtn").addEventListener("click", async () => {
       const prompt = document.getElementById("promptInput").value.trim();
       const iframe = document.getElementById("resultIframe");
@@ -103,25 +134,22 @@
         return;
       }
 
-      // Afficher le loader pendant le processus de chargement
       loader.style.display = "block";
-      iframe.style.display = "none"; // Masquer l'iframe avant de charger
-      iframe.srcdoc = ""; // Réinitialiser le contenu de l'iframe
+      iframe.style.display = "none";
+      iframe.srcdoc = "";
 
       try {
         const response = await fetch(`http://localhost:8000/api/query/run_for_graphs/?prompt=${encodeURIComponent(prompt)}`);
 
         if (!response.ok) {
-          iframe.style.display = "none"; // Masquer l'iframe en cas d'erreur
-          loader.style.display = "none"; // Masquer le loader en cas d'erreur
+          loader.style.display = "none";
           alert(`Erreur de chargement : ${response.statusText}`);
           return;
         }
 
         let html = await response.text();
-        html = reformatHTML(html); // Assurez-vous d'avoir la fonction reformatHTML pour corriger le HTML
+        html = reformatHTML(html); // Doit être défini dans utils.js
 
-        // Ajout du script pour redimensionner l'iframe dynamiquement
         const autoResizeScript = `
           <script>
             function resizeIframe() {
@@ -135,19 +163,16 @@
         `;
 
         const finalHtml = html + autoResizeScript;
-
         iframe.srcdoc = finalHtml;
-        iframe.style.display = "block"; // Afficher l'iframe une fois le contenu chargé
-        loader.style.display = "none"; // Masquer le loader une fois le contenu chargé
+        iframe.style.display = "block";
+        loader.style.display = "none";
 
       } catch (error) {
-        iframe.style.display = "none"; // Masquer l'iframe en cas d'erreur
-        loader.style.display = "none"; // Masquer le loader en cas d'erreur
+        loader.style.display = "none";
         alert(`Erreur lors du chargement du graphique : ${error.message}`);
       }
     });
 
-    // Adapter dynamiquement la hauteur de l'iframe
     window.addEventListener("message", (event) => {
       if (event.data && event.data.type === 'resize-iframe') {
         const iframe = document.getElementById("resultIframe");

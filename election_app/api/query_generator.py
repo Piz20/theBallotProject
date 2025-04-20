@@ -66,13 +66,19 @@ def get_data_from_db(prompt):
 # Fonction pour générer le code D3.js
 def generate_d3_code(prompt, data):
     request = f"""  
-     Voici le schéma de ma base de données {schema_bd} ,
-     donne-moi le code HTML avec un beau css , et une legende du graphique , bref quelque chose de tres detaille meme lorsqu on survol avec la souris , une belle mise en page intelligente du graphique en utilisant d3js qui peut illustrer la requête suivante : {prompt}
-     Voici les données associées : {data}
-     
-     surtout n ajoute aucun commentaire je veux juste le code executable dans le navigateur
-     """
-    
+    Voici le schéma de ma base de données : {schema_bd}.
+
+    Donne-moi le code HTML avec un beau CSS, une légende du graphique, bref quelque chose de très détaillé, même lorsqu’on survole avec la souris.
+
+    Il y aura des explications précises en dessous du graphique. Il doit aussi y avoir la possibilité que la requête ne retourne pas de résultats graphiques, mais par exemple des données simples avec des explications écrites. Tu dois avoir assez de jugeote pour savoir si l’on doit afficher un graphique ou non, même si ce n’est pas précisé explicitement.
+
+    Une belle mise en page intelligente du graphique en utilisant D3.js qui peut illustrer la requête suivante : {prompt}.
+
+    Voici les données associées : {data}.
+
+    Surtout, n’ajoute aucun commentaire. Je veux juste le code exécutable dans le navigateur.
+    """
+
     # Appel à l'API Gemini pour générer le code D3.js avec les données réelles
     response = client.models.generate_content(model="gemini-2.0-flash", contents=request)
     return response.text.strip()
@@ -120,6 +126,8 @@ class QueryViewSet(viewsets.ViewSet):
             html_content = generate_d3_code(prompt, data)
             
             reformatedHTML = reformat_html(html_content)
+            
+            print(reformatedHTML)
 
             return Response(reformatedHTML, content_type="text/html")
 
