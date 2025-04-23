@@ -8,6 +8,7 @@ from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_protect
 from .forms import CustomUserRegistrationForm, LoginForm, ProfilePictureForm, ElectionForm, CandidateForm
 from .models import Election, Candidate, Vote
@@ -48,9 +49,10 @@ def register_view(request):
     return render(request, 'election_app/register.html', {'form': form})
 
 
-# Vue pour la connexion, accessible uniquement si l'utilisateur n'est pas connecté
 @user_passes_test(user_is_not_authenticated)
 def login_view(request):
+    next_url = request.GET.get('next', 'elections')  # valeur par défaut = 'elections'
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -60,16 +62,18 @@ def login_view(request):
 
             if user is not None:
                 login(request, user)
-                return redirect('elections')  # Rediriger vers la page d'accueil après connexion
-            else:
-                # Si l'utilisateur est invalide, ajouter un message d'erreur
-                messages.error(request, 'Invalid login credentials')
 
+                # Vérifie que la redirection est sécurisée
+                if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
+                return redirect('elections')  # Fallback si `next` est mal formé
+
+            else:
+                messages.error(request, 'Identifiants invalides.')
     else:
         form = LoginForm()
 
     return render(request, 'election_app/login.html', {'form': form})
-
 
 # Vue pour la déconnexion
 def logout_view(request):

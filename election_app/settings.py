@@ -20,6 +20,10 @@ import os
 
 SITE_URL = "http://127.0.0.1:8000"  # URL de ton site en local
 
+NGROK_URL = "https://c708-129-0-60-36.ngrok-free.app"  # URL de ton site sur ngrok
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/elections/'  # URL vers laquelle rediriger après la connexion
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +41,17 @@ DEBUG = True
 # SECRET_KEY : Utilisation d'une clé secrète par défaut pour éviter les erreurs
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-tempkey')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ton-domaine.com']  # Ajoute ton domaine WordPress si nécessaire
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+DEFAULT_FROM_EMAIL = "eminiantpisani@gmail.com"
+
+
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'c708-129-0-60-36.ngrok-free.app']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://c708-129-0-60-36.ngrok-free.app',  # Remplacez par l'URL de votre domaine ngrok
+]
+
 
 # Application definition
 
@@ -72,7 +86,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8080',  # Ajoute cette ligne pour autoriser ton frontend local
     'http://127.0.0.1:8000',  # Ajoute cette ligne pour autoriser ton frontend local
-
+   
 
 ]
 
@@ -177,16 +191,6 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 # Chemin de base pour les fichiers téléchargés
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587  # Port sécurisé
-EMAIL_USE_TLS = True  # Active TLS pour la sécurité
-EMAIL_USE_SSL = False  # Désactive SSL
-EMAIL_HOST_USER = "eminiantpisani@gmail.com"  # Ton adresse e-mail Outlook.com
-EMAIL_HOST_PASSWORD = "lpmb eudm psnc meyh"  # Ton mot de passe Outlook.com
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
 
 # Django REST Framework settings
 REST_FRAMEWORK = {

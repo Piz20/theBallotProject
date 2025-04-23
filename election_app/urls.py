@@ -25,7 +25,7 @@ from .views import remove_vote_view
 
 from rest_framework.routers import DefaultRouter
 
-from election_app.api import election , candidate , vote , user , query_generator
+from election_app.api import election , candidate , vote , user , query_generator , mail
 
 
 router = DefaultRouter()
@@ -35,6 +35,7 @@ router.register(r'candidates', candidate.CandidateViewSet, basename='candidate')
 router.register(r'votes', vote.VoteViewSet, basename='vote')
 router.register(r'users', user.UserViewSet,basename='user')
 router.register(r'query', query_generator.QueryViewSet, basename='query')
+router.register(r'email', mail.TestEmailViewSet, basename='email')
 
 
 
@@ -63,7 +64,7 @@ urlpatterns = [
                   path('create_election/', views.create_election_view, name='create_election'),
                   path('elections/<int:election_id>/', views.election_details_view, name='election_details'),
                   path('elections/<int:election_id>/add-candidate/', views.add_candidate_view, name='add_candidate'),
-                  path('election/<int:election_id>/vote/<int:candidate_id>/', views.vote_view, name='vote'),
+                  path('elections/<int:election_id>/vote/<int:candidate_id>/', views.vote_view, name='vote'),
                   path('remove_vote/<int:candidate_id>/', remove_vote_view, name='remove_vote'),
                   path('help/', views.help_view, name='help'),
                   path('gemini/', views.gemini_view, name='gemini'),
