@@ -1,10 +1,14 @@
 from django.conf import settings
 import sendgrid
+import os
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 from rest_framework import status
+from dotenv import load_dotenv
 
+load_dotenv()
+        # Récupération de la clé API SendGrid depuis les variables d'environnement
 class TestEmailViewSet(ViewSet):
 
     @action(detail=False, methods=['post'])
@@ -12,21 +16,26 @@ class TestEmailViewSet(ViewSet):
         emails = request.data.get('emails', [])
         subject = request.data.get('subject', 'Test Email')
         election_id = request.data.get('election_id')
-        ngrok_url = settings.NGROK_URL  # URL dynamique de ngrok
-
+        local_tunnel_url = settings.LOCAL_TUNNEL_URL 
+        
+        
+        api_key = os.getenv('SENDGRID_API_KEY')
+        
+0
         if not election_id:
             return Response({"message": "Election ID must be provided."}, status=status.HTTP_400_BAD_REQUEST)
         if not emails:
             return Response({"message": "Aucune adresse email fournie."}, status=status.HTTP_400_BAD_REQUEST)
 
-        election_url = f"{ngrok_url}/elections/{election_id}/"  # Lien vers l'élection via l'URL ngrok
+        election_url = f"{local_tunnel_url}/elections/{election_id}/"  # Lien vers l'élection via l'URL ngrok
         html_content = f"""
             <p>Ceci est un test d'envoi de mail.</p>
             <p><a href="{election_url}">Accéder à l'élection</a></p>
         """
 
         try:
-            sg = sendgrid.SendGridAPIClient(api_key='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')
+            sg = sendgrid.SendGridAPIClient(api_key=api_key)
+            # Envoi de l'email à chaque adresse fournie
 
             for email in emails:
                 data = {

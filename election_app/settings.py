@@ -14,13 +14,12 @@ from pathlib import Path
 
 from django.conf.urls import static
 from django.contrib import staticfiles
-
 import os
 
 
 SITE_URL = "http://127.0.0.1:8000"  # URL de ton site en local
 
-NGROK_URL = "https://c708-129-0-60-36.ngrok-free.app"  # URL de ton site sur ngrok
+LOCAL_TUNNEL_URL = "https://theballotproject.loca.lt"  # URL de ton site sur ngrok
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/elections/'  # URL vers laquelle rediriger après la connexion
@@ -46,10 +45,10 @@ DEFAULT_FROM_EMAIL = "eminiantpisani@gmail.com"
 
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'c708-129-0-60-36.ngrok-free.app']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'theballotproject.loca.lt']
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://c708-129-0-60-36.ngrok-free.app',  # Remplacez par l'URL de votre domaine ngrok
+    'https://theballotproject.loca.lt',  # Remplacez par l'URL de votre domaine ngrok
 ]
 
 

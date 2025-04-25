@@ -208,7 +208,7 @@ function voteForCandidate(candidateId) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
     // Perform the AJAX request with the dynamic election ID
-    fetch(`/election/${electionId}/vote/${candidateId}/`, {
+    fetch(`/elections/${electionId}/vote/${candidateId}/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
