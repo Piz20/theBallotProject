@@ -21,7 +21,7 @@ class TestEmailViewSet(ViewSet):
         
         api_key = os.getenv('SENDGRID_API_KEY')
         
-0
+
         if not election_id:
             return Response({"message": "Election ID must be provided."}, status=status.HTTP_400_BAD_REQUEST)
         if not emails:
