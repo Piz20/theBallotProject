@@ -1,10 +1,10 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 from django.contrib.auth import get_user_model
-from rest_framework.authtoken.models import Token
 from graphql import GraphQLError
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserUpdateSerializer
 from datetime import datetime
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # Récupérer le modèle d'utilisateur
 CustomUser = get_user_model()
@@ -60,45 +60,41 @@ class LoginUser(graphene.Mutation):
     token = graphene.String()
 
     class Arguments:
-        email = graphene.String()  # Utilisation de l'email au lieu du nom d'utilisateur
-        password = graphene.String()
+        email = graphene.String(required=True)
+        password = graphene.String(required=True)
 
     def mutate(self, info, email, password):
-        # Authentifier l'utilisateur avec l'email
         try:
             user = CustomUser.objects.get(email=email)
         except CustomUser.DoesNotExist:
             raise GraphQLError("User with this email does not exist.")
         
-        # Vérifier le mot de passe
         if not user.check_password(password):
             raise GraphQLError("Incorrect password.")
-
-        # Générer ou récupérer le token d'authentification
-        token, created = Token.objects.get_or_create(user=user)
         
-        return LoginUser(success=True, message="Login successful", token=token.key)
+        if not user.is_active:
+            raise GraphQLError("User account is inactive.")
+        
+        # Créer un token d'accès avec SimpleJWT
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)  # Token d'accès
 
+        return LoginUser(success=True, message="Login successful", token=access_token)
+# Mutation pour la déconnexion de l'utilisateur
 class LogoutUser(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
 
-    class Arguments:
-        email = graphene.String(required=True)
+    def mutate(self, info):
+        user = info.context.user  # Récupérer l'utilisateur authentifié via JWT
 
-    def mutate(self, info, email):
-        try:
-            user = CustomUser.objects.get(email=email)
-        except CustomUser.DoesNotExist:
-            return LogoutUser(success=False, message="User with this email does not exist.")
-
-        try:
-            token = Token.objects.get(user=user)
-            token.delete()
-            return LogoutUser(success=True, message="Logout successful.")
-        except Token.DoesNotExist:
-            return LogoutUser(success=False, message="User is not authenticated (no token found).")
-
+        # Vérifier si l'utilisateur est authentifié
+        if not user.is_authenticated:
+            raise GraphQLError("User is not authenticated.")
+        
+        # En réalité, il n'y a rien à faire ici pour la déconnexion avec JWT
+        # Si tu veux juste une réponse indiquant que l'utilisateur est déconnecté :
+        return LogoutUser(success=True, message="Logout successful.")
 
 # Mutation pour la mise à jour du profil de l'utilisateur
 class UpdateUserProfile(graphene.Mutation):
@@ -139,27 +135,25 @@ class UpdateUserProfile(graphene.Mutation):
 
         return UpdateUserProfile(success=True, message="Profile updated successfully", user=user)
 
+# Mutation pour supprimer le compte de l'utilisateur
 class DeleteUserAccount(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
 
     class Arguments:
-        user_id = graphene.Int(required=True)  # Acceptation de l'ID de l'utilisateur
+        user_id = graphene.Int(required=True)
 
     def mutate(self, info, user_id):
         try:
-            # Récupérer l'utilisateur par son ID
             user = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
             raise GraphQLError("User not found")
         
-        # Supprimer l'utilisateur
         user.delete()
 
         return DeleteUserAccount(success=True, message="Account deleted successfully")
 
-
-# Le schéma GraphQL
+# Schéma GraphQL (Query + Mutation)
 class Mutation(graphene.ObjectType):
     register_user = RegisterUser.Field()
     login_user = LoginUser.Field()
@@ -167,13 +161,12 @@ class Mutation(graphene.ObjectType):
     update_user_profile = UpdateUserProfile.Field()
     delete_user_account = DeleteUserAccount.Field()
 
-# Requêtes GraphQL
+# Query pour récupérer un utilisateur et tous les utilisateurs
 class Query(graphene.ObjectType):
     user = graphene.Field(UserType, id=graphene.Int(required=True))
     all_users = graphene.List(UserType)
 
     def resolve_user(self, info, id):
-        # Récupère un utilisateur en fonction de son ID
         try:
             return CustomUser.objects.get(id=id)
         except CustomUser.DoesNotExist:

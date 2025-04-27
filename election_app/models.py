@@ -39,6 +39,7 @@ class CustomUser(AbstractUser):
     elections = models.JSONField(null=True, blank=True)
 
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now=True)  # auto_now = mise à jour à chaque changement
 
     # Remove username field
     username = None
@@ -64,6 +65,8 @@ class Election(models.Model):
     start_date = models.DateTimeField(validators=[validate_future_date])
     end_date = models.DateTimeField(validators=[validate_future_date])
     eligible_voters = models.ManyToManyField(CustomUser, related_name='eligible_elections', blank=True)
+    created_at = models.DateTimeField(auto_now=True)  # auto_now = mise à jour à chaque changement
+
 
     def clean(self):
         """Ensure start_date is before end_date."""

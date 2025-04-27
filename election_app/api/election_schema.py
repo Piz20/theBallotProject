@@ -105,3 +105,7 @@ class ElectionMutation(graphene.ObjectType):
 
 # Schéma spécifique aux élections
 schema = graphene.Schema(query=ElectionQuery, mutation=ElectionMutation)
+
+# Pour exposer ElectionQuery sous le nom attendu "Query"
+Query = ElectionQuery
+Mutation = ElectionMutation

@@ -20,12 +20,7 @@ from django.urls import path , include
 from django.conf import settings
 from graphene_django.views import GraphQLView
 
-from election_app.api.election_schema import schema as election_schema
-from election_app.api.user_schema import schema as user_schema
-from election_app.api.candidate_schema import schema as candidate_schema
-from election_app.api.vote_schema import schema as vote_schema
-
-
+from election_app.api.schema import schema
 from . import views
 from .views import remove_vote_view
 
@@ -74,10 +69,8 @@ urlpatterns = [
                   
                   path('api/', include(router.urls)),  # Inclure les URLs du routeur
                   
-                  path('graphql/elections/', GraphQLView.as_view(graphiql=True, schema=election_schema)),
-path('graphql/users/', GraphQLView.as_view(graphiql=True, schema=user_schema)),
-path('graphql/candidates/', GraphQLView.as_view(graphiql=True, schema=candidate_schema)),
-path('graphql/votes/', GraphQLView.as_view(graphiql=True, schema=vote_schema)),
+                
+                path("graphql/", GraphQLView.as_view(graphiql=True, schema=schema)),
 
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

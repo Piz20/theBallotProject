@@ -1,8 +1,13 @@
 import os
 from pathlib import Path
 
+from datetime import timedelta  # Importer timedelta
+
+# Ton secret key pour signer le JWT
+
 # Other settings...
 
+SECRET_KEY = "LEbIgPiz20"
 SITE_URL = "http://127.0.0.1:8000"  # URL de ton site en local
 LOCAL_TUNNEL_URL = "https://theballotproject.loca.lt"  # URL de ton site sur ngrok
 
@@ -26,6 +31,19 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
 ]
 
+# Configuration pour SimpleJWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Temps de vie du token d'accès
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Temps de vie du token de rafraîchissement
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -33,11 +51,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework.authtoken',
+    'rest_framework.authtoken',  # Module pour les tokens d'authentification
     'election_app',  # Assurez-vous que cette ligne est présente
     'rest_framework',
+    'rest_framework_simplejwt',  # Simple JWT pour l'authentification
     'corsheaders',
+    "graphene_django",
 ]
+
+
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -58,10 +81,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',
 ]
 
-# Middleware pour désactiver CSRF pour GraphQL
-GRAPHENE = {
-    # Vous pouvez laisser cette configuration vide ou la supprimer, car CSRF est géré ailleurs
-}
+
 
 ROOT_URLCONF = 'election_app.urls'
 
@@ -130,12 +150,13 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ),
+  'DEFAULT_AUTHENTICATION_CLASSES': (
+    'rest_framework.authentication.SessionAuthentication',
+    'rest_framework.authentication.BasicAuthentication',
+    'rest_framework.authentication.TokenAuthentication',
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
+),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
-}
+} 

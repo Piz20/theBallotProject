@@ -23,6 +23,8 @@ class CreateOrUpdateVote(graphene.Mutation):
     vote = graphene.Field(VoteType)
 
     def mutate(self, info, candidate_id, election_id):
+        
+
         candidate = get_object_or_404(Candidate, id=candidate_id)
         election = get_object_or_404(Election, id=election_id)
 
