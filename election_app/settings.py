@@ -25,24 +25,21 @@ DEFAULT_FROM_EMAIL = "eminiantpisani@gmail.com"
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'theballotproject.loca.lt']
 
+# Session Cookie settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Utiliser la base de données pour stocker les sessions
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 jours en secondes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Expirer la session lorsque l'utilisateur ferme le navigateur
+SESSION_SAVE_EVERY_REQUEST = True  # Sauvegarde la session à chaque requête
+# Si tu veux un système de token, utilise un cookie sécurisé
+CSRF_COOKIE_SECURE = True  # Assure-toi d'utiliser HTTPS pour les cookies CSRF
+
 CSRF_TRUSTED_ORIGINS = [
     'https://theballotproject.loca.lt',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
 ]
 
-# Configuration pour SimpleJWT
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Temps de vie du token d'accès
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Temps de vie du token de rafraîchissement
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'VERIFYING_KEY': None,
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
-}
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -54,11 +51,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',  # Module pour les tokens d'authentification
     'election_app',  # Assurez-vous que cette ligne est présente
     'rest_framework',
-    'rest_framework_simplejwt',  # Simple JWT pour l'authentification
     'corsheaders',
-    "graphene_django",
 ]
-
 
 
 

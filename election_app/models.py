@@ -96,8 +96,8 @@ class Candidate(models.Model):
         on_delete=models.CASCADE,
         related_name='candidates'  # Relation inverse accessible via `election.candidates`
     )
-    name = models.CharField(max_length=255)
-    bio = models.TextField(max_length=1000, null=False, blank=False)
+    name = models.CharField(max_length=255, unique=True)  # Le nom doit être unique
+    bio = models.TextField(max_length=1000, null=False, blank=False)  # La bio doit être unique
     vote_count = models.IntegerField(default=0)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)  # Date de création du candidat

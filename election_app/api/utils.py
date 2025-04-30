@@ -1,3 +1,17 @@
+from graphql import GraphQLError
+
+def check_authentication(info, must_be_authenticated=True):
+    user = info.context.user  # récupère automatiquement l'utilisateur de la requête
+    if must_be_authenticated and not user.is_authenticated:
+        raise GraphQLError("Authentication required.")
+    if not must_be_authenticated and user.is_authenticated:
+        raise GraphQLError("Operation not allowed for authenticated users.")
+    return user
+
+
+
+
+
 def reformat_html(html_code: str) -> str:
     """
     Reformats HTML code to improve readability by adding basic indentation

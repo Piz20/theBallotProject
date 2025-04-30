@@ -5,15 +5,20 @@ from sqlalchemy import create_engine, text
 from google import genai
 from election_app.api.utils import reformat_html
 import pandas as pd
-
+from dotenv import load_dotenv
+import os
+import graphene
+from graphene.types.generic import GenericScalar
 # Clé API Gemini
-api_key = "AIzaSyA_LLcHUt9wGtdX7wDOAbwtB5y4pzj9drY"
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Initialisation du client Gemini
 def initialize_genai_client(api_key):
     return genai.Client(api_key=api_key)
 
-client = initialize_genai_client(api_key)
+client = initialize_genai_client(GEMINI_API_KEY)
 
 # Connexion à SQL Server
 server = 'localhost\\SQLEXPRESS03'
@@ -84,16 +89,13 @@ def generate_d3_code(prompt, data):
     return response.text.strip()
 
 
+        
+# Définition du Query GraphQL
+class Query(graphene.ObjectType):
+    run = graphene.Field(GenericScalar, prompt=graphene.String(required=True))
+    run_for_graphs = graphene.Field(graphene.String, prompt=graphene.String(required=True))
 
-# Vue principale
-class QueryViewSet(viewsets.ViewSet):
-
-    @action(detail=False, methods=["get"])
-    def run(self, request):
-        prompt = request.query_params.get("prompt", "")
-        if not prompt:
-            return Response({"error": "Le paramètre 'prompt' est requis."}, status=status.HTTP_400_BAD_REQUEST)
-
+    def resolve_run(self, info, prompt):
         sql_query = generate_sql_query(prompt)
 
         try:
@@ -101,35 +103,24 @@ class QueryViewSet(viewsets.ViewSet):
                 result = connection.execute(text(sql_query))
                 df = pd.DataFrame(result.fetchall(), columns=result.keys())
 
-            return Response({
+            return {
                 "query": sql_query,
                 "data": df.to_dict(orient="records")
-            })
-
+            }
         except Exception as e:
-            return Response({"error": str(e), "query": sql_query}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    
-    @action(detail=False, methods=["get"])
-    def run_for_graphs(self, request):
-        # Récupérer le paramètre 'prompt' depuis la requête
-        prompt = request.query_params.get("prompt", "")
-        
-        if not prompt:
-            return Response({"error": "Le paramètre 'prompt' est requis."}, status=status.HTTP_400_BAD_REQUEST)
+            return {
+                "error": str(e),
+                "query": sql_query
+            }
 
+    def resolve_run_for_graphs(self, info, prompt):
         try:
-            # Récupérer les données réelles de la base de données pour le graphique
             data = get_data_from_db(prompt)
-            
-            # Générer le code D3.js avec les données réelles
             html_content = generate_d3_code(prompt, data)
-            
-            reformatedHTML = reformat_html(html_content)
-            
-            print(reformatedHTML)
-
-            return Response(reformatedHTML, content_type="text/html")
-
+            reformated_html = reformat_html(html_content)
+            return reformated_html
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return str(e)
+
+schema = graphene.Schema(query=Query)
+  

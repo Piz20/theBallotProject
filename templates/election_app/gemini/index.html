@@ -139,15 +139,29 @@
       iframe.srcdoc = "";
 
       try {
-        const response = await fetch(`http://localhost:8000/api/query/run_for_graphs/?prompt=${encodeURIComponent(prompt)}`);
-
+        const response = await fetch("http://localhost:8000/graphql/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            query: `
+              query {
+                runForGraphs(prompt: "${prompt}")
+              }
+            `
+          })
+        });
+        
         if (!response.ok) {
           loader.style.display = "none";
           alert(`Erreur de chargement : ${response.statusText}`);
           return;
         }
+        
+        const result = await response.json();
 
-        let html = await response.text();
+        let html = await result.data.runForGraphs;
         html = reformatHTML(html); // Doit être défini dans utils.js
 
         const autoResizeScript = `

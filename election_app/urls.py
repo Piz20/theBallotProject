@@ -24,39 +24,26 @@ from election_app.api.schema import schema
 from . import views
 from .views import remove_vote_view
 
-from rest_framework.routers import DefaultRouter
-
-from election_app.api import  query_generator , mail
 
 
-router = DefaultRouter()
-
-router.register(r'query', query_generator.QueryViewSet, basename='query')
-router.register(r'email', mail.TestEmailViewSet, basename='email')
 
 
 
 urlpatterns = [
 
                   path('admin/', admin.site.urls),
-                  # Route pour la page de connexion
 
-                  # Route pour la page d'index (page d'accueil)
                   path('', views.index_view, name='index'),
-                  # Vous devez ajouter cette vue dans votre fichier `views.py`
 
                   path('register/', views.register_view, name='register'),
-
-                  path('about/', views.about_view, name='about'),
-
                   path('login/', views.login_view, name='login'),
-
                   path('logout/', views.logout_view, name='logout'),
+                  
                   path('profile/', views.profile_view, name='profile'),
-
+                  path('about/', views.about_view, name='about'),
                   path('contact/', views.contact_view, name='contact'),
-
                   path('features/', views.features_view, name='features'),
+                  
                   path('elections/', views.elections_view, name='elections'),
                   path('create_election/', views.create_election_view, name='create_election'),
                   path('elections/<int:election_id>/', views.election_details_view, name='election_details'),
@@ -66,9 +53,7 @@ urlpatterns = [
                   path('help/', views.help_view, name='help'),
                   
                   path('gemini/', views.gemini_view, name='gemini'),
-                  
-                  path('api/', include(router.urls)),  # Inclure les URLs du routeur
-                  
+                                    
                 
                 path("graphql/", GraphQLView.as_view(graphiql=True, schema=schema)),
 

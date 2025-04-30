@@ -3,14 +3,13 @@ from graphene_django.types import DjangoObjectType
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from ..models import Candidate, Vote, Election
-
+from .utils import check_authentication  # Importer la fonction de vérification d'authentification
 
 # Type GraphQL pour Vote
 class VoteType(DjangoObjectType):
     class Meta:
         model = Vote
         fields = '__all__'  # Inclure tous les champs du modèle Vote
-
 
 # Mutation GraphQL pour créer un vote ou le mettre à jour
 class CreateOrUpdateVote(graphene.Mutation):
@@ -23,7 +22,7 @@ class CreateOrUpdateVote(graphene.Mutation):
     vote = graphene.Field(VoteType)
 
     def mutate(self, info, candidate_id, election_id):
-        
+        check_authentication(info.context.user)  # Vérification d'authentification
 
         candidate = get_object_or_404(Candidate, id=candidate_id)
         election = get_object_or_404(Election, id=election_id)
@@ -47,17 +46,16 @@ class CreateOrUpdateVote(graphene.Mutation):
                 candidate.vote_count += 1
                 candidate.save()
 
-                return CreateOrUpdateVote(success=True, message="Your vote has been updated successfully.", vote=existing_vote)
+                return CreateOrUpdateVote(success=True, message="Votre vote a été mis à jour avec succès.", vote=existing_vote)
             else:
-                return CreateOrUpdateVote(success=True, message="You have already voted for this candidate.", vote=existing_vote)
+                return CreateOrUpdateVote(success=True, message="Vous avez déjà voté pour ce candidat.", vote=existing_vote)
 
         # Si l'utilisateur n'a pas encore voté, créer un nouveau vote
         new_vote = Vote.objects.create(user=info.context.user, candidate=candidate, election=election)
         candidate.vote_count += 1
         candidate.save()
 
-        return CreateOrUpdateVote(success=True, message="Your vote has been recorded successfully.", vote=new_vote)
-
+        return CreateOrUpdateVote(success=True, message="Votre vote a été enregistré avec succès.", vote=new_vote)
 
 # Mutation GraphQL pour supprimer un vote
 class DeleteVote(graphene.Mutation):
@@ -68,11 +66,13 @@ class DeleteVote(graphene.Mutation):
     message = graphene.String()
 
     def mutate(self, info, vote_id):
+        check_authentication(info.context.user)  # Vérification d'authentification
+
         vote = get_object_or_404(Vote, id=vote_id)
 
         # Vérifier si le vote appartient à l'utilisateur authentifié
         if vote.user != info.context.user:
-            raise ValidationError("You can only delete your own vote.")
+            raise ValidationError("Vous ne pouvez supprimer que votre propre vote.")
 
         # Mettre à jour le nombre de votes du candidat
         vote.candidate.vote_count -= 1
@@ -81,26 +81,26 @@ class DeleteVote(graphene.Mutation):
         # Supprimer le vote
         vote.delete()
 
-        return DeleteVote(success=True, message="Your vote has been successfully deleted.")
-
+        return DeleteVote(success=True, message="Votre vote a été supprimé avec succès.")
 
 # Schéma GraphQL
 class Mutation(graphene.ObjectType):
-    create_or_update_vote = CreateOrUpdateVote.Field()  # Cette ligne est essentielle
+    create_or_update_vote = CreateOrUpdateVote.Field()
     delete_vote = DeleteVote.Field()
 
 class Query(graphene.ObjectType):
-    all_votes = graphene.List(VoteType)  # Nom plus clair et standard
+    all_votes = graphene.List(VoteType)
     vote_by_id = graphene.Field(VoteType, id=graphene.Int(required=True))
 
     def resolve_all_votes(self, info):
+        check_authentication(info.context.user)  # Vérification d'authentification
         return Vote.objects.all()
 
     def resolve_vote_by_id(self, info, id):
+        check_authentication(info.context.user)  # Vérification d'authentification
         try:
             return Vote.objects.get(pk=id)
         except Vote.DoesNotExist:
-            return None  # O
-
+            return None
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
