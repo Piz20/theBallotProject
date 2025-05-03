@@ -88,7 +88,7 @@ class Election(models.Model):
             ),
         ]
 
-
+# Candidate class
 class Candidate(models.Model):
     id = models.AutoField(primary_key=True)
     election = models.ForeignKey(
