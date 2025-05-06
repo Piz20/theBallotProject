@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Vote } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { useMutation } from "@apollo/client";
+import { LOGIN_USER , REGISTER_USER } from "@/lib/mutations";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -60,33 +62,64 @@ export default function AuthPage() {
     },
   });
 
-  const onLoginSubmit = (data: LoginFormValues) => {
-    console.log(data);
-    router.push("/");
-  };
 
+
+const [loginUser, { data, loading, error }] = useMutation(LOGIN_USER);
+
+  
+const onLoginSubmit = async (formData: LoginFormValues) => {
+    try {
+      const response = await loginUser({
+        variables: {
+          email: formData.email,
+          password: formData.password,
+        },
+      });
+  
+      const token = response.data.loginUser.token;
+      // Sauvegarder le token localement
+      localStorage.setItem("token", token);
+  
+      // Rediriger vers la page d’accueil ou dashboard
+      router.push("/");
+    } catch (err) {
+      console.error("Login error:", err);
+      // Tu peux aussi afficher une alerte ou un toast ici
+    }
+  };
+  
   const onRegisterSubmit = (data: RegisterFormValues) => {
     console.log(data);
     router.push("/");
   };
 
+  // Mettre à jour le titre de la page en fonction de l'onglet actif
+  useEffect(() => {
+    if (activeTab === "login") {
+      document.title = "Login - TheBallotProject";
+    } else if (activeTab === "register") {
+      document.title = "Register - TheBallotProject";
+    }
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-background to-background/90 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 w-full h-full bg-[url('https://images.pexels.com/photos/7054511/pexels-photo-7054511.jpeg')] bg-cover bg-center opacity-5"></div>
       <div className="absolute inset-0 backdrop-blur-sm bg-background/50"></div>
-      
+
       <div className="container relative flex flex-col items-center justify-center max-w-md">
         <Link href="/" className="mb-8 text-3xl font-bold tracking-tight text-primary flex items-center gap-2">
           <Vote className="h-8 w-8 heartbeat text-primary" />
           TheBallotProject
         </Link>
-        
+
+      
         <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="login" className="w-full">
             <Card className="w-full bg-card/80 backdrop-blur-md border-border/20 shadow-xl">
               <CardHeader>
@@ -110,7 +143,7 @@ export default function AuthPage() {
                       <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">Password</Label>
@@ -132,28 +165,21 @@ export default function AuthPage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                     {loginForm.formState.errors.password && (
                       <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="remember-me" 
-                      {...loginForm.register("rememberMe")} 
-                    />
+                    <Checkbox id="remember-me" {...loginForm.register("rememberMe")} />
                     <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       Remember me
                     </Label>
                   </div>
-                  
+
                   <Button type="submit" className="w-full">
                     Sign in
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -162,7 +188,7 @@ export default function AuthPage() {
               </CardContent>
               <CardFooter>
                 <p className="text-center text-sm text-muted-foreground w-full">
-                  Don&apos;t have an account?{" "}
+                  Don't have an account?{" "}
                   <button
                     type="button"
                     onClick={() => setActiveTab("register")}
@@ -174,7 +200,7 @@ export default function AuthPage() {
               </CardFooter>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="register" className="w-full">
             <Card className="w-full bg-card/80 backdrop-blur-md border-border/20 shadow-xl">
               <CardHeader>
@@ -198,7 +224,7 @@ export default function AuthPage() {
                       <p className="text-sm text-destructive">{registerForm.formState.errors.name.message}</p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="register-email">Email</Label>
                     <div className="relative">
@@ -214,7 +240,7 @@ export default function AuthPage() {
                       <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="register-password">Password</Label>
                     <div className="relative">
@@ -231,18 +257,14 @@ export default function AuthPage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                     {registerForm.formState.errors.password && (
                       <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm Password</Label>
                     <div className="relative">
@@ -259,20 +281,16 @@ export default function AuthPage() {
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
                       >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
+                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                     {registerForm.formState.errors.confirmPassword && (
                       <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
                     )}
                   </div>
-                  
+
                   <Button type="submit" className="w-full">
-                    Create account
+                    Sign up
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </form>
@@ -292,18 +310,10 @@ export default function AuthPage() {
             </Card>
           </TabsContent>
         </Tabs>
-        
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          By continuing, you agree to our{" "}
-          <Link href="/terms" className="underline underline-offset-4 hover:text-primary">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline underline-offset-4 hover:text-primary">
-            Privacy Policy
-          </Link>
-          .
-        </p>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+  © Laforge – All rights reserved 2025
+</p>
+
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from datetime import timedelta  # Importer timedelta
+from corsheaders.defaults import default_headers  # Import default_headers
 
 # Ton secret key pour signer le JWT
 
@@ -35,10 +36,21 @@ CSRF_COOKIE_SECURE = True  # Assure-toi d'utiliser HTTPS pour les cookies CSRF
 
 CSRF_TRUSTED_ORIGINS = [
     'https://theballotproject.loca.lt',
-    'http://127.0.0.1:8000',
     'http://localhost:8000',
+    'http://localhost:3000',
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8080',
+    'http://localhost:3000',  # Ajoute cette ligne pour autoriser ton frontend local
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'authorization',
+    'x-csrftoken',
+]
 
 
 INSTALLED_APPS = [
@@ -69,11 +81,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',  # Ajoute cette ligne pour autoriser ton frontend local
-    'http://127.0.0.1:8000',
-]
 
 
 
@@ -148,7 +155,6 @@ REST_FRAMEWORK = {
     'rest_framework.authentication.SessionAuthentication',
     'rest_framework.authentication.BasicAuthentication',
     'rest_framework.authentication.TokenAuthentication',
-    'rest_framework_simplejwt.authentication.JWTAuthentication',
 ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
