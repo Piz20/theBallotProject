@@ -36,17 +36,18 @@ export const REGISTER_USER = gql`
 `;
 
 /**
- * Mutation pour se connecter (login) avec email et mot de passe.
+ * Mutation pour se connecter (login) avec email, mot de passe et option "remember me".
  */
 export const LOGIN_USER = gql`
-  mutation LoginUser($email: String!, $password: String!) {
-    loginUser(email: $email, password: $password) {
+  mutation LoginUser($email: String!, $password: String!, $rememberMe: Boolean) {
+    loginUser(email: $email, password: $password, rememberMe: $rememberMe) {
       success
       message
       details
     }
   }
 `;
+
 
 /**
  * Mutation pour se déconnecter (logout) de la session actuelle.

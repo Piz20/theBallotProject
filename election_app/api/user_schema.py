@@ -64,20 +64,33 @@ class LoginUser(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
         password = graphene.String(required=True)
+        remember_me = graphene.Boolean(required=False, default_value=False)  # 🆕
+        
 
-    def mutate(self, info, email, password):
-        # Vérifier si l'utilisateur est déjà connecté
+    def mutate(self, info, email, password, remember_me):
         check_authentication(info, must_be_authenticated=False)
 
-        # Essayer d'authentifier l'utilisateur
         user = authenticate(username=email, password=password)
-
+        
         if user is not None:
-            login(info.context, user)  # Cela crée une session pour l'utilisateur
+            login(info.context, user)
+            
+          
 
-            return LoginUser(success=True, message="Login successful", details=f"User {user.name} with email {user.email} has logged in.")
+            # ⏱️ Définir la durée de session selon remember_me
+            if remember_me:
+                info.context.session.set_expiry(1209600)  # 2 semaines
+            else:
+                info.context.session.set_expiry(86400)  # 86400 secondes = 1 jour
+
+            return LoginUser(
+                success=True,
+                message="Login successful",
+                details=f"User {user.get_username()} with email {user.email} has logged in."
+            )
         else:
             return LoginUser(success=False, message="Invalid credentials")
+
 
 # Mutation pour la déconnexion de l'utilisateur
 class LogoutUser(graphene.Mutation):

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Vote } from "lucide-react";
 
@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMutation } from "@apollo/client";
-import { LOGIN_USER , REGISTER_USER } from "@/lib/mutations";
+import { LOGIN_USER } from "@/lib/mutations/userMutations"; // Assurez-vous que vous avez bien ce fichier et cette mutation.
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -43,14 +43,20 @@ export default function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
 
+  // Déclaration des états pour gérer la progression et le processus de soumission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
+      rememberMe: false,  // Valeur par défaut pour "se souvenir de moi"
     },
   });
+
+  const { control } = loginForm; // Extract control from loginForm
 
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -62,38 +68,44 @@ export default function AuthPage() {
     },
   });
 
+  const [loginUser, { data, loading, error }] = useMutation(LOGIN_USER);
 
+  const onLoginSubmit = async (formData: LoginFormValues) => {
+    setIsSubmitting(true);
 
-const [loginUser, { data, loading, error }] = useMutation(LOGIN_USER);
-
-  
-const onLoginSubmit = async (formData: LoginFormValues) => {
     try {
+      // Mise à jour progressive de la barre de progression pendant la soumission
       const response = await loginUser({
         variables: {
           email: formData.email,
           password: formData.password,
+          rememberMe: formData.rememberMe,  // Passer 'rememberMe' dans la requête
+        },
+        context: {
+          credentials: 'include',
         },
       });
-  
-      const token = response.data.loginUser.token;
-      // Sauvegarder le token localement
-      localStorage.setItem("token", token);
-  
-      // Rediriger vers la page d’accueil ou dashboard
-      router.push("/");
+
+      const result = response.data.loginUser;
+
+      if (result.success) {
+        router.push("/dashboard"); // Redirection vers la page d'accueil
+      } else {
+        setLoginError(result.message || "Invalid credentials.");
+      }
     } catch (err) {
       console.error("Login error:", err);
-      // Tu peux aussi afficher une alerte ou un toast ici
+      setLoginError("Error when trying to connect.");
+    } finally {
+      setIsSubmitting(false); // Arrêter le processus
     }
   };
-  
+
   const onRegisterSubmit = (data: RegisterFormValues) => {
     console.log(data);
     router.push("/");
   };
 
-  // Mettre à jour le titre de la page en fonction de l'onglet actif
   useEffect(() => {
     if (activeTab === "login") {
       document.title = "Login - TheBallotProject";
@@ -113,7 +125,7 @@ const onLoginSubmit = async (formData: LoginFormValues) => {
           TheBallotProject
         </Link>
 
-      
+
         <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="login">Login</TabsTrigger>
@@ -127,23 +139,32 @@ const onLoginSubmit = async (formData: LoginFormValues) => {
                 <CardDescription>Enter your credentials to sign in to your account</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                <form
+                  onSubmit={loginForm.handleSubmit(onLoginSubmit)}
+                  autoComplete="on"
+                  className="space-y-4"
+                >
+                  {/* Email */}
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="email"
+                        autoComplete="email"
                         placeholder="name@example.com"
                         className="pl-10"
                         {...loginForm.register("email")}
                       />
                     </div>
                     {loginForm.formState.errors.email && (
-                      <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>
+                      <p className="text-sm text-destructive">
+                        {loginForm.formState.errors.email.message}
+                      </p>
                     )}
                   </div>
 
+                  {/* Password */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">Password</Label>
@@ -156,6 +177,7 @@ const onLoginSubmit = async (formData: LoginFormValues) => {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
                         placeholder="••••••••"
                         className="pl-10 pr-10"
                         {...loginForm.register("password")}
@@ -169,22 +191,48 @@ const onLoginSubmit = async (formData: LoginFormValues) => {
                       </button>
                     </div>
                     {loginForm.formState.errors.password && (
-                      <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>
+                      <p className="text-sm text-destructive">
+                        {loginForm.formState.errors.password.message}
+                      </p>
                     )}
                   </div>
 
+                  {/* Remember me */}
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="remember-me" {...loginForm.register("rememberMe")} />
-                    <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Remember me
-                    </Label>
+                    <Controller
+                      name="rememberMe"
+                      control={loginForm.control}
+                      defaultValue={false}
+                      render={({ field }) => (
+                        <>
+                          <Checkbox
+                            control={loginForm.control}
+                            name="rememberMe"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                          <label
+                            htmlFor="rememberMe"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Remember me
+                          </label>
+                        </>
+                      )}
+                    />
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    Sign in
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                  {/* Error message */}
+                  {loginError && (
+                    <p className="text-sm text-destructive text-center">{loginError}</p>
+                  )}
+
+                  {/* Submit */}
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {loading ? "Logging in..." : "Login"}
                   </Button>
                 </form>
+
               </CardContent>
               <CardFooter>
                 <p className="text-center text-sm text-muted-foreground w-full">
@@ -311,8 +359,8 @@ const onLoginSubmit = async (formData: LoginFormValues) => {
           </TabsContent>
         </Tabs>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-  © Laforge – All rights reserved 2025
-</p>
+          © Laforge – All rights reserved 2025
+        </p>
 
       </div>
     </div>
