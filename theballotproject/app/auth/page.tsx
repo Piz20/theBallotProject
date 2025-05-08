@@ -89,7 +89,7 @@ export default function AuthPage() {
       const result = response.data.loginUser;
 
       if (result.success) {
-        router.push("/dashboard"); // Redirection vers la page d'accueil
+        router.push("/elections"); // Redirection vers la page d'accueil
       } else {
         setLoginError(result.message || "Invalid credentials.");
       }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Head from "next/head";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -47,7 +48,14 @@ export default function CreateElectionPage() {
     // Implémenter la logique de création d'élection ici
   };
 
+ 
+
+
   return (
+    <>
+    <title>TheBallotProject - Create an Election"</title>
+    
+
     <div className="min-h-screen bg-gradient-to-br from-background to-background/90">
       <div className="container mx-auto px-4 py-8">
         {/* En-tête */}
@@ -57,7 +65,7 @@ export default function CreateElectionPage() {
             <h1 className="text-3xl font-bold">TheBallotProject</h1>
           </div>
           <Button variant="ghost" asChild>
-            <Link href="/dashboard">
+            <Link href="/elections">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Retour au tableau de bord
             </Link>
@@ -202,5 +210,7 @@ export default function CreateElectionPage() {
         </Card>
       </div>
     </div>
-  );
+
+</>  );
 }
+

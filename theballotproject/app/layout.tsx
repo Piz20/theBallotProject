@@ -7,7 +7,6 @@ import ApolloWrapper from './ApolloWrapper'; // Import du composant client
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'TheBallotProject - Make Electoral Process Easier',
   description: 'TheBallotProject helps organizations streamline their electoral processes.',
   icons: {
     icon: '/favicon.png',
