@@ -32,7 +32,7 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractUser):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255, null=True, blank=True)
-    matricule = models.CharField(max_length=100, null=True, blank=True, unique=True)
+    matricule = models.CharField(max_length=100, null=True, blank=True)
     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], null=True, blank=True)
     email = models.EmailField(unique=True, null=False, blank=False)
     date_of_birth = models.DateField(null=True, blank=True)

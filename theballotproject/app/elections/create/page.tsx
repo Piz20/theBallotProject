@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
+import Footer from "@/components/ui/footer";
 
 const electionSchema = z.object({
   title: z.string().min(5, { message: "Le titre doit contenir au moins 5 caractères" }),
@@ -209,6 +210,7 @@ export default function CreateElectionPage() {
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </div>
 
 </>  );

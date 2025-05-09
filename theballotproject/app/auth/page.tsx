@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Vote } from "lucide-react";
+import { differenceInYears, parseISO } from "date-fns";
+
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Vote, Cake } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMutation } from "@apollo/client";
-import { LOGIN_USER } from "@/lib/mutations/userMutations"; // Assurez-vous que vous avez bien ce fichier et cette mutation.
+import { REGISTER_USER, LOGIN_USER } from "@/lib/mutations/userMutations"; // Assurez-vous que vous avez bien ce fichier et cette mutation.
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -25,10 +27,14 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
-  confirmPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  name: z.string().nonempty({ message: "Name is required" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z.string().min(6, { message: "Please confirm your password" }),
+  gender: z.string().nonempty({ message: "Gender is required" }),
+  dateOfBirth: z
+    .string()
+    .nonempty({ message: "Date of Birth is required" })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -56,19 +62,21 @@ export default function AuthPage() {
     },
   });
 
-  const { control } = loginForm; // Extract control from loginForm
 
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
+      dateOfBirth: "",
+      gender: "",
       email: "",
       password: "",
       confirmPassword: "",
     },
   });
 
-  const [loginUser, { data, loading, error }] = useMutation(LOGIN_USER);
+  const [loginUser, { data: loginData, loading: loginLoading, error: loginMutationError }] = useMutation(LOGIN_USER);
+  const [registerUser, { data: registerData, loading: registerLoading, error: registerError }] = useMutation(REGISTER_USER);
 
   const onLoginSubmit = async (formData: LoginFormValues) => {
     setIsSubmitting(true);
@@ -94,17 +102,70 @@ export default function AuthPage() {
         setLoginError(result.message || "Invalid credentials.");
       }
     } catch (err) {
-      console.error("Login error:", err);
+      console.error("Login error:", loginMutationError || err);
       setLoginError("Error when trying to connect.");
     } finally {
       setIsSubmitting(false); // Arrêter le processus
     }
   };
 
-  const onRegisterSubmit = (data: RegisterFormValues) => {
-    console.log(data);
-    router.push("/");
-  };
+
+
+  const onRegisterSubmit = async (data: RegisterFormValues) => {
+  setIsSubmitting(true);
+
+  try {
+    const response = await registerUser({
+      variables: {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
+      },
+    });
+
+    // Si la requête passe sans erreur, on vérifie le contenu
+    if (response?.data?.registerUser?.success) {
+      router.push("/elections");
+    } else {
+      registerForm.setError("root", { message: "Registration failed. Please try again." });
+    }
+  } catch (err: any) {
+    console.error("Error registering user:", err);
+
+    // Vérifie si c’est un tableau d’erreurs connues
+    const errors = err?.graphQLErrors || err?.response?.errors || err?.errors;
+
+    if (Array.isArray(errors)) {
+      errors.forEach((error: any) => {
+
+     let message = error.message;
+
+    if (message.includes("Email")) {
+      registerForm.setError("email", {
+        message: message.replace(/^Email\s*:\s*/i, ""),
+      });
+    } else if (message.includes("Date of Birth")) {
+      registerForm.setError("dateOfBirth", {
+        message: message.replace(/^Date of Birth\s*:\s*/i, ""),
+      });
+    } else {
+      registerForm.setError("root", { message });
+    }
+      });
+    } else {
+      // Si ce n'est pas un tableau d'erreurs, on affiche une erreur globale
+      const fallbackMessage =
+        err instanceof Error ? err.message : "An unexpected error occured.";
+      registerForm.setError("root", { message: fallbackMessage });
+    }
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
 
   useEffect(() => {
     if (activeTab === "login") {
@@ -229,7 +290,7 @@ export default function AuthPage() {
 
                   {/* Submit */}
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {loading ? "Logging in..." : "Login"}
+                    {loginLoading ? "Logging in..." : "Login"}
                   </Button>
                 </form>
 
@@ -257,6 +318,14 @@ export default function AuthPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+
+                  {/* Affichage de l'erreur globale */}
+                  {registerForm.formState.errors.root && (
+                    <p className="text-sm text-destructive">
+                      {registerForm.formState.errors.root.message}
+                    </p>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <div className="relative">
@@ -270,6 +339,43 @@ export default function AuthPage() {
                     </div>
                     {registerForm.formState.errors.name && (
                       <p className="text-sm text-destructive">{registerForm.formState.errors.name.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <div className="relative">
+                      <select
+                        id="gender"
+                        className="w-full pl-10 pr-4 py-2 rounded-md border border-input bg-background text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        {...registerForm.register("gender")}
+                      >
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
+                      <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                    </div>
+                    {registerForm.formState.errors.gender && (
+                      <p className="text-sm text-destructive">{registerForm.formState.errors.gender.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="date-of-birth">Date of birth</Label>
+                    <div className="relative block">
+                      <Cake className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                      <Input
+                        id="date-of-birth"
+                        type="date"
+                        className="pl-10 pr-2 w-auto"
+                        {...registerForm.register("dateOfBirth")}
+                      />
+                    </div>
+                    {registerForm.formState.errors.dateOfBirth && (
+                      <p className="text-sm text-destructive">
+                        {registerForm.formState.errors.dateOfBirth.message}
+                      </p>
                     )}
                   </div>
 
@@ -337,8 +443,8 @@ export default function AuthPage() {
                     )}
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    Sign up
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Signing up..." : "Sign up"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </form>
@@ -357,12 +463,13 @@ export default function AuthPage() {
               </CardFooter>
             </Card>
           </TabsContent>
+
         </Tabs>
         <p className="mt-4 text-center text-xs text-muted-foreground">
           © Laforge – All rights reserved 2025
         </p>
 
       </div>
-    </div>
+    </div >
   );
 }

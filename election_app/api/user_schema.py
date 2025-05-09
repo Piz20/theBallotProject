@@ -1,6 +1,6 @@
 import graphene
 from graphql import GraphQLError
-from datetime import datetime
+from datetime import datetime, date
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from graphene_django.types import DjangoObjectType
@@ -15,7 +15,7 @@ class UserType(DjangoObjectType):
         model = CustomUser
         fields = '__all__'
 
-# Mutation pour l'enregistrement de l'utilisateur
+# Mutation pour l'enregistrement d'un nouvel utilisateur
 class RegisterUser(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
@@ -31,30 +31,43 @@ class RegisterUser(graphene.Mutation):
         profile_picture = graphene.String()
 
     def mutate(self, info, email, password, name=None, matricule=None, gender=None, date_of_birth=None, profile_picture=None):
-        # Vérifier si l'utilisateur est déjà connecté
         check_authentication(info, must_be_authenticated=False)
-        
+
+        # Validation email
+        if CustomUser.objects.filter(email=email).exists():
+            raise GraphQLError("Email: Email already in use.")
+
+        # Validation date de naissance
+        parsed_birth_date = None
         if date_of_birth:
             try:
-                date_of_birth = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+                parsed_birth_date = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
             except ValueError:
-                raise GraphQLError("Invalid date format. Expected: YYYY-MM-DD.")
+                raise GraphQLError("Date of Birth: Invalid date format. Expected: YYYY-MM-DD.")
 
-        if CustomUser.objects.filter(email=email).exists():
-            raise GraphQLError("Email already in use.")
+            today = date.today()
+            age = today.year - parsed_birth_date.year - (
+                (today.month, today.day) < (parsed_birth_date.month, parsed_birth_date.day)
+            )
+
+            if age < 18:
+                raise GraphQLError("Date of Birth: User must be at least 18 years old.")
+            if age > 200:
+                raise GraphQLError("Date of Birth: Invalid age. Please enter a realistic date of birth.")
 
         user = CustomUser(
             email=email,
             name=name,
             matricule=matricule,
             gender=gender,
-            date_of_birth=date_of_birth,
+            date_of_birth=parsed_birth_date,
             profile_picture=profile_picture
         )
         user.set_password(password)
         user.save()
 
         return RegisterUser(success=True, message="User registered successfully", user=user)
+
 
 class LoginUser(graphene.Mutation):
     success = graphene.Boolean()

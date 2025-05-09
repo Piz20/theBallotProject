@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation } from "@apollo/client";
 import Link from "next/link";
-import Head from "next/head";
+import Footer from "@/components/ui/footer";
 import {
   Vote,
   Plus,
@@ -18,78 +20,121 @@ import {
   LineChart,
   Menu,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMutation } from "@apollo/client";
-import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 import { LOGOUT_USER } from "@/lib/mutations/userMutations";
-// Données simulées pour les élections
-const elections = [
+
+// Fonction de recherche
+export interface SearchOptions<T> {
+  query: string;
+  items: T[];
+  keys: (keyof T)[];
+  exactMatch?: boolean;
+}
+
+function searchItems<T>({ query, items, keys, exactMatch = false }: SearchOptions<T>): T[] {
+  if (!query.trim()) return items;
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  return items.filter((item) =>
+    keys.some((key) => {
+      const value = item[key];
+      if (typeof value !== "string") return false;
+      const normalizedValue = value.toLowerCase();
+      return exactMatch
+        ? normalizedValue === normalizedQuery
+        : normalizedValue.includes(normalizedQuery);
+    })
+  );
+}
+
+// Interface pour une élection
+interface Election {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  participants: number;
+  endDate: string;
+  image: string;
+}
+
+/// Mock data
+const elections: Election[] = [
   {
     id: 1,
-    title: "Élection du Bureau Exécutif 2024",
-    description: "Élection annuelle pour le renouvellement du bureau exécutif",
-    status: "En cours",
+    title: "Executive Board Election 2024",
+    description: "Annual election to renew the executive board",
+    status: "Ongoing",
     participants: 145,
     endDate: "2024-04-15",
-    image: "https://images.pexels.com/photos/1550337/pexels-photo-1550337.jpeg"
+    image: "https://images.pexels.com/photos/1550337/pexels-photo-1550337.jpeg",
   },
   {
     id: 2,
-    title: "Représentants des Étudiants",
-    description: "Élection des représentants étudiants pour l'année académique",
-    status: "À venir",
+    title: "Student Representatives",
+    description: "Election of student representatives for the academic year",
+    status: "Upcoming",
     participants: 0,
     endDate: "2024-05-01",
-    image: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg"
+    image: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg",
   },
   {
     id: 3,
-    title: "Comité des Fêtes",
-    description: "Sélection des membres du comité des fêtes",
-    status: "Terminé",
+    title: "Party Committee",
+    description: "Selection of members for the event planning committee",
+    status: "Completed",
     participants: 89,
     endDate: "2024-03-20",
-    image: "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg"
-  }
+    image: "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg",
+  },
 ];
 
 export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredElections, setFilteredElections] = useState(elections);
-
-  useEffect(() => {
-    const results = elections.filter(election =>
-      Object.values(election).some(value =>
-        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-    setFilteredElections(results);
-  }, [searchTerm]);
-
   const [logout] = useMutation(LOGOUT_USER);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    const results = searchItems<Election>({
+      query: searchTerm,
+      items: elections,
+      keys: ["title", "description", "status", "endDate"],
+      exactMatch: false,
+    });
+
+    setFilteredElections(results);
+  }, [searchTerm]);
+
   const handleLogout = async () => {
-    setIsLoading(true); // Démarrer le spinner
+    setIsLoading(true);
 
     try {
-      const res = await logout(); // Appelle la mutation GraphQL
+      const res = await logout();
       const success = res?.data?.logoutUser?.details;
 
       if (success) {
-        // Attendre 1.5 secondes avant de rediriger
         setTimeout(() => {
-          router.push('/auth');
+          router.push("/auth");
         }, 1500);
       } else {
-        setIsLoading(false); // Arrêter le spinner en cas d'échec
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Erreur lors de la déconnexion :", error);
-      setIsLoading(false); // Arrêter le spinner si erreur
+      setIsLoading(false);
     }
   };
 
@@ -115,7 +160,7 @@ export default function DashboardPage() {
                     <Vote className="h-4 w-4 inline-block mr-1" />
                     Elections
                   </Link>
-                  <Link href="/dashboard/statistics" className="text-gray-700 hover:text-primary">
+                  <Link href="/elections/statistics" className="text-gray-700 hover:text-primary">
                     <LineChart className="h-4 w-4 inline-block mr-1" />
                     Statistics
                   </Link>
@@ -255,8 +300,8 @@ export default function DashboardPage() {
                   />
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${election.status === "En cours" ? "bg-green-100 text-green-800 animate-pulse" :
-                        election.status === "À venir" ? "bg-blue-100 text-blue-800 animate-pulse" :
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${election.status === "Ongoing" ? "bg-green-100 text-green-800 animate-pulse" :
+                        election.status === "Upcoming" ? "bg-blue-100 text-blue-800 animate-pulse" :
                           "bg-gray-100 text-gray-800"
                         }`}>
                         {election.status}
@@ -283,51 +328,8 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="bg-black text-white mt-16">
-          <div className="container mx-auto px-4 py-12">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Vote className="h-6 w-6 text-primary" />
-                  <span className="text-lg font-bold">TheBallotProject</span>
-                </div>
-                <p className="text-sm text-gray-400">
-                  Simplify your electoral processes with our innovative platform.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4 text-gray-200">Product</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">Features</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">Pricing</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">FAQ</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4 text-gray-200">Company</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">About Us</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">Blog</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">Careers</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4 text-gray-200">Legal</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">Privacy Policy</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">Terms of Service</Link></li>
-                  <li><Link href="#" className="text-gray-400 hover:text-primary">Cookies</Link></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            © 2025 LaForge – TheBallotProject. All rights reserved.
-          </div>
-    </footer>
+       {/* footer */}
+       <Footer/>
       </div >
 
     </>);
