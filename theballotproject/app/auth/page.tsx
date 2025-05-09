@@ -16,6 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Toaster } from '@/components/ui/toaster';
+import { useToastStore } from '@/hooks/useToastStore';
+
 
 import { useMutation } from "@apollo/client";
 import { REGISTER_USER, LOGIN_USER } from "@/lib/mutations/userMutations"; // Assurez-vous que vous avez bien ce fichier et cette mutation.
@@ -45,6 +48,8 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const router = useRouter();
+  const { addToast } = useToastStore();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
@@ -81,13 +86,13 @@ export default function AuthPage() {
   const onLoginSubmit = async (formData: LoginFormValues) => {
     setIsSubmitting(true);
 
+
     try {
-      // Mise à jour progressive de la barre de progression pendant la soumission
       const response = await loginUser({
         variables: {
           email: formData.email,
           password: formData.password,
-          rememberMe: formData.rememberMe,  // Passer 'rememberMe' dans la requête
+          rememberMe: formData.rememberMe,
         },
         context: {
           credentials: 'include',
@@ -97,74 +102,109 @@ export default function AuthPage() {
       const result = response.data.loginUser;
 
       if (result.success) {
-        router.push("/elections"); // Redirection vers la page d'accueil
+        addToast({
+          title: "Success!",
+          message: "You have successfully logged in.",
+          variant: "default",
+        });
+        router.push("/elections");
       } else {
+        addToast({
+          title: "Error",
+          message: result.message || "Invalid credentials.",
+          variant: "error",
+        });
         setLoginError(result.message || "Invalid credentials.");
       }
     } catch (err) {
       console.error("Login error:", loginMutationError || err);
+      addToast({
+        title: "Error",
+        message: "An error occurred while trying to log in.",
+        variant: "error",
+      });
       setLoginError("Error when trying to connect.");
     } finally {
-      setIsSubmitting(false); // Arrêter le processus
+      setIsSubmitting(false);
     }
   };
 
-
-
   const onRegisterSubmit = async (data: RegisterFormValues) => {
-  setIsSubmitting(true);
+    setIsSubmitting(true);
 
-  try {
-    const response = await registerUser({
-      variables: {
-        email: data.email,
-        password: data.password,
-        name: data.name,
-        gender: data.gender,
-        dateOfBirth: data.dateOfBirth,
-      },
-    });
-
-    // Si la requête passe sans erreur, on vérifie le contenu
-    if (response?.data?.registerUser?.success) {
-      router.push("/elections");
-    } else {
-      registerForm.setError("root", { message: "Registration failed. Please try again." });
-    }
-  } catch (err: any) {
-    console.error("Error registering user:", err);
-
-    // Vérifie si c’est un tableau d’erreurs connues
-    const errors = err?.graphQLErrors || err?.response?.errors || err?.errors;
-
-    if (Array.isArray(errors)) {
-      errors.forEach((error: any) => {
-
-     let message = error.message;
-
-    if (message.includes("Email")) {
-      registerForm.setError("email", {
-        message: message.replace(/^Email\s*:\s*/i, ""),
+    try {
+      const response = await registerUser({
+        variables: {
+          email: data.email,
+          password: data.password,
+          name: data.name,
+          gender: data.gender,
+          dateOfBirth: data.dateOfBirth,
+        },
       });
-    } else if (message.includes("Date of Birth")) {
-      registerForm.setError("dateOfBirth", {
-        message: message.replace(/^Date of Birth\s*:\s*/i, ""),
-      });
-    } else {
-      registerForm.setError("root", { message });
-    }
-      });
-    } else {
-      // Si ce n'est pas un tableau d'erreurs, on affiche une erreur globale
-      const fallbackMessage =
-        err instanceof Error ? err.message : "An unexpected error occured.";
-      registerForm.setError("root", { message: fallbackMessage });
-    }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
+      if (response?.data?.registerUser?.success) {
+        addToast({
+          title: "Success!",
+          message: "Your account has been created successfully.",
+          variant: "default",
+        });
+        router.push("/elections");
+      } else {
+        addToast({
+          title: "Error",
+          message: "Registration failed. Please try again.",
+          variant: "error",
+        });
+        registerForm.setError("root", { message: "Registration failed. Please try again." });
+      }
+    } catch (err: any) {
+      console.error("Error registering user:", err);
+
+      const errors = err?.graphQLErrors || err?.response?.errors || err?.errors;
+
+      if (Array.isArray(errors)) {
+        errors.forEach((error: any) => {
+          let message = error.message;
+
+          // Appliquer les remplacements dans le message pour le toast
+          const toastMessage = message
+            .replace(/^Email\s*:\s*/i, "")   // Retirer "Email:"
+            .replace(/^Date of Birth\s*:\s*/i, "");  // Retirer "Date of Birth:"
+
+          // Afficher le toast avec le message modifié
+          addToast({
+            title: "Error",
+            message: toastMessage,  // Message du toast sans "Email:" ni "Date of Birth:"
+            variant: "error",
+          });
+
+          // Mettre à jour les erreurs du formulaire en fonction de l'erreur spécifique
+          if (message.includes("Email")) {
+            registerForm.setError("email", {
+              message: message.replace(/^Email\s*:\s*/i, ""),  // Retirer "Email:" dans le message de l'erreur du formulaire
+            });
+          } else if (message.includes("Date of Birth")) {
+            registerForm.setError("dateOfBirth", {
+              message: message.replace(/^Date of Birth\s*:\s*/i, ""),  // Retirer "Date of Birth:" dans le message de l'erreur du formulaire
+            });
+          } else {
+            registerForm.setError("root", { message });
+          }
+        });
+      } else {
+        const fallbackMessage = err instanceof Error ? err.message : "An unexpected error occurred.";
+        addToast({
+          title: "Error",
+          message: fallbackMessage,
+          variant: "error",
+        });
+        registerForm.setError("root", { message: fallbackMessage });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -177,8 +217,9 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-background to-background/90 flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 w-full h-full bg-[url('https://images.pexels.com/photos/7054511/pexels-photo-7054511.jpeg')] bg-cover bg-center opacity-5"></div>
-      <div className="absolute inset-0 backdrop-blur-sm bg-background/50"></div>
+
+      <Toaster />
+
 
       <div className="container relative flex flex-col items-center justify-center max-w-md">
         <Link href="/" className="mb-8 text-3xl font-bold tracking-tight text-primary flex items-center gap-2">
