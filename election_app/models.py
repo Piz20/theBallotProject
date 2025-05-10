@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxLengthValidator
+from django.core.validators import MaxLengthValidator, URLValidator
 from django.db import models
 from django.utils import timezone
 
@@ -60,22 +60,59 @@ def validate_future_date(value):
 
 class Election(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True, validators=[MaxLengthValidator(255)])
-    description = models.TextField(validators=[MaxLengthValidator(1000)], null=False, blank=False)
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        validators=[MaxLengthValidator(255)]
+    )
+    description = models.TextField(
+        validators=[MaxLengthValidator(1000)],
+        null=False,
+        blank=False
+    )
     start_date = models.DateTimeField(validators=[validate_future_date])
     end_date = models.DateTimeField(validators=[validate_future_date])
-    eligible_voters = models.ManyToManyField(CustomUser, related_name='eligible_elections', blank=True)
-    created_at = models.DateTimeField(auto_now=True)  # auto_now = mise à jour à chaque changement
+    eligible_voters = models.ManyToManyField(
+        CustomUser,
+        related_name='eligible_elections',
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now=True)
 
+    # Champs image
+    image_file = models.ImageField(
+        upload_to='election_images/',
+        null=True,
+        blank=True,
+        help_text=("Upload an image file from your device.")
+    )
+    image_url = models.URLField(
+        max_length=500,
+        validators=[URLValidator()],
+        null=True,
+        blank=True,
+        help_text=("Or provide an image URL.")
+    )
 
     def clean(self):
-        """Ensure start_date is before end_date."""
+        super().clean()
+        # Vérifie que la date de début précède la date de fin
         if self.start_date >= self.end_date:
-            raise ValidationError("The start date must be before the end date.")
+            raise ValidationError(("The start date must be before the end date."))
+
+        # Vérifie qu'au moins une image est fournie (fichier ou URL)
+        if not self.image_file and not self.image_url:
+            raise ValidationError(("You must provide either an image file or an image URL."))
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.full_clean()  # Appelle clean() + validation des champs
         super().save(*args, **kwargs)
+
+    def get_image(self):
+        """Retourne l’image (locale si disponible, sinon l’URL distante)."""
+        if self.image_file:
+            return self.image_file.url
+        return self.image_url
 
     def __str__(self):
         return self.name

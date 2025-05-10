@@ -23,6 +23,8 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Loader from "@/components/ui/loader";
+
 import {
   Card,
   CardContent,
@@ -32,7 +34,11 @@ import {
 } from "@/components/ui/card";
 
 import { LOGOUT_USER } from "@/lib/mutations/userMutations";
-
+import { useToastStore } from "@/hooks/useToastStore";
+import { Toaster } from "@/components/ui/toaster";
+import { GET_ALL_ELECTIONS } from "@/lib/mutations/electionMutations";
+import { useQuery } from "@apollo/client";
+import { Election } from "@/interfaces/interfaces";
 // Fonction de recherche
 export interface SearchOptions<T> {
   query: string;
@@ -41,82 +47,72 @@ export interface SearchOptions<T> {
   exactMatch?: boolean;
 }
 
-function searchItems<T>({ query, items, keys, exactMatch = false }: SearchOptions<T>): T[] {
-  if (!query.trim()) return items;
 
-  const normalizedQuery = query.trim().toLowerCase();
 
-  return items.filter((item) =>
-    keys.some((key) => {
-      const value = item[key];
-      if (typeof value !== "string") return false;
-      const normalizedValue = value.toLowerCase();
-      return exactMatch
-        ? normalizedValue === normalizedQuery
-        : normalizedValue.includes(normalizedQuery);
-    })
-  );
-}
 
-// Interface pour une élection
-interface Election {
-  id: number;
-  title: string;
-  description: string;
-  status: string;
-  participants: number;
-  endDate: string;
-  image: string;
-}
 
-/// Mock data
-const elections: Election[] = [
-  {
-    id: 1,
-    title: "Executive Board Election 2024",
-    description: "Annual election to renew the executive board",
-    status: "Ongoing",
-    participants: 145,
-    endDate: "2024-04-15",
-    image: "https://images.pexels.com/photos/1550337/pexels-photo-1550337.jpeg",
-  },
-  {
-    id: 2,
-    title: "Student Representatives",
-    description: "Election of student representatives for the academic year",
-    status: "Upcoming",
-    participants: 0,
-    endDate: "2024-05-01",
-    image: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg",
-  },
-  {
-    id: 3,
-    title: "Party Committee",
-    description: "Selection of members for the event planning committee",
-    status: "Completed",
-    participants: 89,
-    endDate: "2024-03-20",
-    image: "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg",
-  },
+const RANDOM_IMAGES = [
+  "https://images.pexels.com/photos/1550337/pexels-photo-1550337.jpeg",
+  "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg",
+  "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg",
+  "https://images.pexels.com/photos/1509582/pexels-photo-1509582.jpeg",
+  "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg",
+  "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg"
 ];
+const mapElectionData = (apiData: any[]): Election[] => {
+  return apiData.map((item, index) => ({
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    startDate: item.startDate,
+    endDate: item.endDate,
+    createdAt: item.createdAt,
+    status: new Date(item.endDate) > new Date() ? 
+      (new Date(item.startDate) <= new Date() ? "Ongoing" : "Upcoming") : 
+      "Completed",
+    imageUrl: RANDOM_IMAGES[index % RANDOM_IMAGES.length],
+    eligibleVoters: item.eligibleVoters || 0 // Default to 0 if not provided
+  }));
+};
 
 export default function DashboardPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredElections, setFilteredElections] = useState(elections);
+  const { loading, error, data } = useQuery(GET_ALL_ELECTIONS);
+  const [elections, setElections] = useState<Election[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredElections, setFilteredElections] = useState<Election[]>([]);
+
+  
   const [logout] = useMutation(LOGOUT_USER);
+  
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { addToast } = useToastStore();
 
+  // Update elections when data is loaded
   useEffect(() => {
-    const results = searchItems<Election>({
-      query: searchTerm,
-      items: elections,
-      keys: ["title", "description", "status", "endDate"],
-      exactMatch: false,
-    });
+    if (data && data.allElections) {
+      const mappedData = mapElectionData(data.allElections);
+      setElections(mappedData);
+      setFilteredElections(mappedData);
+    }
+  }, [data]);
 
-    setFilteredElections(results);
-  }, [searchTerm]);
+  // Filter elections when search term changes
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredElections(elections);
+      return;
+    }
+
+    const normalizedQuery = searchTerm.trim().toLowerCase();
+    const filtered = elections.filter(election => 
+      election.name.toLowerCase().includes(normalizedQuery) ||
+      election.description.toLowerCase().includes(normalizedQuery) ||
+      election.status.toLowerCase().includes(normalizedQuery)
+    );
+    
+    setFilteredElections(filtered);
+  }, [searchTerm, elections]);
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -126,6 +122,11 @@ export default function DashboardPage() {
       const success = res?.data?.logoutUser?.details;
 
       if (success) {
+        addToast({
+          title: "Success!",
+          message: "Goodbye 👋 !",
+          variant: "success",
+        });
         setTimeout(() => {
           router.push("/auth");
         }, 1500);
@@ -137,6 +138,8 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   };
+
+  
 
 
 
@@ -277,7 +280,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-
+          <Toaster/>
           {/* Barre de recherche */}
           <div className="relative mb-8">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -289,48 +292,67 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Liste des élections */}
+            {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader />
+            <span className="ml-2 text-gray-600">Loading elections...</span>
+          </div>
+        ) : error ? (
+          <div className="text-center py-10 text-red-500">
+            <p>Error loading elections: {error.message}</p>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredElections.map((election) => (
-              <Card key={election.id} className="group hover:shadow-lg transition-shadow duration-200">
-                <CardContent className="p-0">
-                  <div
-                    className="h-48 w-full bg-cover bg-center rounded-t-lg"
-                    style={{ backgroundImage: `url(${election.image})` }}
-                  />
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${election.status === "Ongoing" ? "bg-green-100 text-green-800 animate-pulse" :
-                        election.status === "Upcoming" ? "bg-blue-100 text-blue-800 animate-pulse" :
-                          "bg-gray-100 text-gray-800"
-                        }`}>
-                        {election.status}
+              <div 
+                key={election.id} 
+                className="group hover:shadow-lg transition-shadow duration-200 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm"
+              >
+                <div 
+                  className="h-48 w-full bg-cover bg-center"
+                  style={{ backgroundImage: `url(${election.imageUrl})` }}
+                />
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      election.status === "Ongoing" ? "bg-green-100 text-green-800 animate-pulse" :
+                      election.status === "Upcoming" ? "bg-blue-100 text-blue-800 animate-pulse" :
+                      "bg-gray-100 text-gray-800"
+                    }`}>
+                      {election.status}
+                    </span>
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{election.name}</h3>
+                  <p className="text-sm text-gray-600 mb-4">{election.description}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-500">
+                        10 eligible voters
                       </span>
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">{election.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{election.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          {election.participants} participants
-                        </span>
-                      </div>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        Voir détails
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
+                    <button className="text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                      View details
+                      <ChevronRight className="ml-1 h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+                    <div className="flex justify-between">
+                      <span>Start: {new Date(election.startDate).toLocaleDateString()}</span>
+                      <span>End: {new Date(election.endDate).toLocaleDateString()}</span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-       {/* footer */}
-       <Footer/>
-      </div >
+        )}
+          </div>
+        {/* footer */}
+        <Footer />
+      </div>
 
     </>);
 }
+

@@ -104,10 +104,13 @@ export default function AuthPage() {
       if (result.success) {
         addToast({
           title: "Success!",
-          message: "You have successfully logged in.",
-          variant: "default",
+          message: "You have successfully logged in ✅👤 !",
+          variant: "success",
         });
-        router.push("/elections");
+        setTimeout(() => {
+          router.push("/elections");
+        }, 3000);
+
       } else {
         addToast({
           title: "Error",
@@ -143,20 +146,48 @@ export default function AuthPage() {
         },
       });
 
-      if (response?.data?.registerUser?.success) {
-        addToast({
-          title: "Success!",
-          message: "Your account has been created successfully.",
-          variant: "default",
+      const registrationResult = response?.data?.registerUser;
+
+      if (registrationResult?.success) {
+        // 🔐 Connexion automatique après succès de l'inscription
+        const loginResponse = await loginUser({
+          variables: {
+            email: data.email,
+            password: data.password,
+            rememberMe: true, // ou false selon ton choix
+          },
+          context: {
+            credentials: 'include', // 🔑 indispensable pour les cookies de session
+          },
         });
-        router.push("/elections");
+
+        const loginResult = loginResponse?.data?.loginUser;
+        if (loginResult?.success) {
+          addToast({
+            title: "Success!",
+            message: "Your account has been created and you're now logged in ✅👤 !",
+            variant: "success",
+          });
+
+          setTimeout(() => {
+            router.push("/elections");
+          }, 3000);
+        } else {
+          addToast({
+            title: "Login Failed",
+            message: loginResult?.message || "Account created but login failed.",
+            variant: "error",
+          });
+        }
       } else {
         addToast({
           title: "Error",
-          message: "Registration failed. Please try again.",
+          message: registrationResult?.message || "Registration failed. Please try again.",
           variant: "error",
         });
-        registerForm.setError("root", { message: "Registration failed. Please try again." });
+        registerForm.setError("root", {
+          message: registrationResult?.message || "Registration failed. Please try again.",
+        });
       }
     } catch (err: any) {
       console.error("Error registering user:", err);

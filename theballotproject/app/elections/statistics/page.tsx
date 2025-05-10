@@ -61,6 +61,9 @@ export default function StatisticsPage() {
   };
 
   return (
+    <>
+          <title>TheBallotProject - Statistics and Analysis</title>
+
     <div className="min-h-screen bg-gradient-to-br from-background to-background/90">
       <div className="container max-w-[95%] mx-auto px-6 py-8">
         {/* En-tête */}
@@ -224,5 +227,6 @@ export default function StatisticsPage() {
       </div>
       <Footer/>
     </div>
+    </>
   );
 }
