@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, URLValidator
 from django.db import models
 from django.utils import timezone
+from django.db import models
+from django.contrib.auth import get_user_model
 
 
 class CustomUserManager(BaseUserManager):
@@ -52,11 +54,13 @@ class CustomUser(AbstractUser):
         return self.email or "User without email"
 
 
-def validate_future_date(value):
-    """Validation to ensure date is not in the past."""
-    if value < timezone.now():
-        raise ValidationError("The date cannot be in the past.")
+# Obtention du modèle utilisateur, ici CustomUser
+User = get_user_model()
 
+def validate_future_date(value):
+    """Validation pour s'assurer que la date est dans le futur."""
+    if value and value <= timezone.now():
+        raise ValidationError("La date doit être dans le futur.")
 
 class Election(models.Model):
     id = models.AutoField(primary_key=True)
@@ -70,39 +74,43 @@ class Election(models.Model):
         null=False,
         blank=False
     )
-    start_date = models.DateTimeField(validators=[validate_future_date])
-    end_date = models.DateTimeField(validators=[validate_future_date])
+    start_date = models.DateTimeField(validators=[validate_future_date], null=True, blank=True)
+    end_date = models.DateTimeField(validators=[validate_future_date], null=True, blank=True)
+    
     eligible_voters = models.ManyToManyField(
-        CustomUser,
+        User,  # Utilisation du modèle dynamique
         related_name='eligible_elections',
         blank=True
     )
     created_at = models.DateTimeField(auto_now=True)
 
-    # Champs image
     image_file = models.ImageField(
         upload_to='election_images/',
         null=True,
         blank=True,
-        help_text=("Upload an image file from your device.")
+        help_text=("Téléchargez un fichier image.")
     )
     image_url = models.URLField(
         max_length=500,
         validators=[URLValidator()],
         null=True,
         blank=True,
-        help_text=("Or provide an image URL.")
+        help_text=("Ou fournissez une URL d’image.")
+    )
+
+    created_by = models.ForeignKey(
+        User,  # Utilisation du modèle dynamique
+        related_name='created_elections',
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False
     )
 
     def clean(self):
+        # Supprimé la validation de la relation entre start_date et end_date
         super().clean()
-        # Vérifie que la date de début précède la date de fin
-        if self.start_date >= self.end_date:
-            raise ValidationError(("The start date must be before the end date."))
-
-        # Vérifie qu'au moins une image est fournie (fichier ou URL)
         if not self.image_file and not self.image_url:
-            raise ValidationError(("You must provide either an image file or an image URL."))
+            raise ValidationError(("Vous devez fournir soit un fichier image, soit une URL d'image."))
 
     def save(self, *args, **kwargs):
         self.full_clean()  # Appelle clean() + validation des champs
@@ -117,13 +125,7 @@ class Election(models.Model):
     def __str__(self):
         return self.name
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(start_date__lt=models.F("end_date")),
-                name="check_start_date_before_end_date"
-            ),
-        ]
+
 
 # Candidate class
 class Candidate(models.Model):

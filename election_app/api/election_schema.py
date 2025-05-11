@@ -2,6 +2,11 @@ import graphene
 from graphene_django.types import DjangoObjectType
 from ..models import Election
 from .utils import check_authentication  # Importer la fonction de vérification d'authentification
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.core.validators import MaxLengthValidator, URLValidator
+from django.core.exceptions import ValidationError
+from django.utils.timezone import now
 
 # Définir le type GraphQL pour Election
 class ElectionType(DjangoObjectType):
@@ -10,38 +15,6 @@ class ElectionType(DjangoObjectType):
         fields = '__all__'  # Inclure tous les champs du modèle Election
 
 
-# Mutation pour créer une élection
-class CreateElection(graphene.Mutation):
-    class Arguments:
-        name = graphene.String(required=True)
-        start_date = graphene.DateTime(required=True)
-        end_date = graphene.DateTime(required=True)
-        description = graphene.String(required=True)
-
-    success = graphene.Boolean()
-    message = graphene.String()
-    election = graphene.Field(ElectionType)
-
-    def mutate(self, info, name, start_date, end_date, description):
-        user = check_authentication(info)  # Vérifier l'authentification
-        if not user:
-            return CreateElection(success=False, message="Authentification requise.")
-
-        # Vérifier si une élection avec le même nom existe déjà
-        if Election.objects.filter(name=name).exists():
-            return CreateElection(success=False, message="Une élection avec ce nom existe déjà.")
-
-        try:
-            # Créer l'élection
-            election = Election.objects.create(
-                name=name,
-                start_date=start_date,
-                end_date=end_date,
-                description=description
-            )
-            return CreateElection(success=True, message="Élection créée avec succès!", election=election)
-        except Exception as e:
-            return CreateElection(success=False, message=str(e))
 
 
 # Mutation pour mettre à jour une élection
@@ -88,6 +61,63 @@ class UpdateElection(graphene.Mutation):
             return UpdateElection(success=False, message="L'élection n'a pas été trouvée.")
         except Exception as e:
             return UpdateElection(success=False, message=str(e))
+
+
+class CreateElection(graphene.Mutation):
+    class Arguments:
+        name = graphene.String(required=True)
+        description = graphene.String(required=True)
+
+        start_date = graphene.DateTime(required=False)
+        end_date = graphene.DateTime(required=False)
+        image_url = graphene.String(required=False)  # Garder l'underscore ici
+        image_file = graphene.String(required=False)
+
+    success = graphene.Boolean()
+    message = graphene.String()
+    election = graphene.Field(ElectionType)
+
+    def mutate(self, info, name, description , start_date=None, end_date=None, image_url=None, image_file=None):
+        # Vérifier l'authentification
+        user = check_authentication(info)
+        if not user:
+            return CreateElection(success=False, message="Authentification requise.")
+
+        # Vérifier si une élection avec le même nom existe déjà
+        if Election.objects.filter(name=name).exists():
+            return CreateElection(success=False, message="Une élection avec ce nom existe déjà.")
+
+        # Vérifier que l'utilisateur soumet uniquement un des deux champs (image_url ou image_file)
+        if image_url and image_file:
+            return CreateElection(success=False, message="Vous ne pouvez pas soumettre à la fois une URL d'image et un fichier image.")
+        
+        # Variable pour le chemin de l'image (si fichier image est fourni)
+        image_path = None
+
+        # Gérer l'upload du fichier si un fichier image est fourni
+        if image_file:
+            try:
+                # Créer un chemin temporaire pour le fichier et sauvegarder le fichier image
+                image_name = f"{name}_image.jpg"
+                image_path = default_storage.save(f"election_images/{image_name}", ContentFile(image_file.encode('utf-8')))
+            except Exception as e:
+                return CreateElection(success=False, message=f"Erreur lors de l'upload de l'image : {str(e)}")
+
+        try:
+            # Créer l'élection avec les informations fournies
+            election = Election.objects.create(
+                name=name,
+                start_date=start_date,
+                end_date=end_date,
+                description=description,
+                image_url=image_url if image_url else None,  # Utiliser image_url si fourni
+                image_file=image_path if image_file else None,  # Utiliser image_file si fourni
+                created_by=user  # Assigner l'utilisateur authentifié à created_by
+            )
+            return CreateElection(success=True, message="Élection créée avec succès!", election=election)
+        except Exception as e:
+            return CreateElection(success=False, message=str(e))
+
 
 
 # Mutation pour supprimer une élection

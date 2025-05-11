@@ -32,28 +32,35 @@ export const GET_ELECTION_BY_ID = gql`
 export const CREATE_ELECTION = gql`
   mutation CreateElection(
     $name: String!
-    $startDate: DateTime!
-    $endDate: DateTime!
     $description: String!
+    $startDate: DateTime
+    $endDate: DateTime
+    $imageUrl: String
+    $imageFile: Upload
   ) {
     createElection(
       name: $name
+      description: $description
       startDate: $startDate
       endDate: $endDate
-      description: $description
+      imageUrl: $imageUrl
+      imageFile: $imageFile
     ) {
       success
       message
       election {
         id
         name
+        description
         startDate
         endDate
-        description
+        imageUrl
+        imageFile
       }
     }
   }
 `;
+
 
 export const UPDATE_ELECTION = gql`
   mutation UpdateElection(
