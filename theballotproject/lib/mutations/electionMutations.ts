@@ -11,6 +11,8 @@ export const GET_ALL_ELECTIONS = gql`
       startDate
       endDate
       createdAt
+      imageUrl
+      imageFile
     }
   }
 `;
@@ -55,7 +57,6 @@ export const CREATE_ELECTION = gql`
         startDate
         endDate
         imageUrl
-        imageFile
       }
     }
   }

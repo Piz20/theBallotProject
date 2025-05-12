@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -20,9 +21,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import Footer from "@/components/ui/footer";
-
+import { Toaster } from "@/components/ui/toaster";
 // Import de ta mutation depuis un autre fichier
 import { CREATE_ELECTION } from "@/lib/mutations/electionMutations";
+import { title } from "node:process";
+import { useToastStore } from "@/hooks/useToastStore";
 
 const electionSchema = z.object({
   title: z
@@ -43,7 +46,8 @@ type ElectionFormValues = z.infer<typeof electionSchema>;
 
 export default function CreateElectionPage() {
   const [step, setStep] = useState(1);
-
+  const { addToast } = useToastStore();
+  const router = useRouter();
   // Hook mutation Apollo
   const [createElection, { loading: mutationLoading, error: mutationError }] =
     useMutation(CREATE_ELECTION);
@@ -85,46 +89,73 @@ export default function CreateElectionPage() {
         });
       }
     }
+
+    console.log("Étape actuelle :", step);
   };
 
   const onSubmit = async (data: ElectionFormValues) => {
-    // Création des variables à envoyer avec la mutation
     const variables: any = {
       name: data.title,
       description: data.description,
-      // Ajout des dates si nécessaire
-      // startDate: data.startDate,
-      // endDate: data.endDate,
     };
 
+    // Vérifie le type d'image (URL ou fichier)
     if (data.electionImage) {
       if (data.electionImage.type === "url") {
+        // Si l'utilisateur a fourni une URL, on l'ajoute directement dans les variables
         variables.imageUrl = data.electionImage.value;
       } else {
-        variables.imageFile = data.electionImage.value;
+        // Sinon on suppose que c'est un fichier et on l'ajoute
+        if (data.electionImage.type === "file") {
+          variables.imageFile = data.electionImage.value;
+        } else {
+          console.error("❌ L'image fournie n'est pas un fichier valide.");
+          return;
+        }
       }
     }
 
+    console.log("Données soumises :", variables);  // Log complet des données
+
     try {
-      // Exécution de la mutation pour créer l’élection
       const result = await createElection({ variables });
 
-      // Vérification du succès de la mutation
       if (result.data.createElection.success) {
+
+        addToast({
+          title: "Success",
+          message: "Élection created successfuly !✅",
+          variant: "success",
+        })
+
+        setTimeout(() => {
+          router.push("/elections");
+        }, 3000);
+
         console.log("✅ Élection créée :", result.data.createElection.election);
-        // Tu peux naviguer vers la page de l’élection nouvellement créée, par exemple :
-        // router.push(`/elections/${result.data.createElection.election.id}`);
       } else {
         console.error("❌ Erreur création :", result.data.createElection.message);
       }
     } catch (err) {
-      // Gestion des erreurs lors de la mutation
+      addToast({
+        title: "Error",
+        message: "An error occurred when creating election.❌",
+        variant: "error",
+      });
       console.error("⚠️ Mutation échouée :", err);
+      if (err instanceof Error && "networkError" in err) {
+        console.error("Erreur réseau :", (err as any).networkError);
+      }
+      if (err instanceof Error && "graphQLErrors" in err) {
+        (err as any).graphQLErrors.forEach((e: any) => console.error("Erreur GraphQL :", e.message));
+      }
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background/90">
+      <Toaster />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -166,7 +197,16 @@ export default function CreateElectionPage() {
         </div>
 
         {/* Formulaire */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl mx-auto">
+        <form
+          onSubmit={(e) => {
+            if (step === 3) {
+              handleSubmit(onSubmit)(e);
+            } else {
+              e.preventDefault(); // Empêche la soumission si ce n’est pas l’étape 3
+            }
+          }}
+          className="space-y-6 max-w-2xl mx-auto"
+        >
           <Card className="shadow-lg animate-fadeIn">
             <CardHeader>
               <CardTitle>Créer une nouvelle élection</CardTitle>
@@ -277,29 +317,55 @@ export default function CreateElectionPage() {
 
             {/* Navigation */}
             <div className="flex justify-between px-6 py-4">
-              {step > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep(step - 1)}
-                  disabled={mutationLoading}
-                >
-                  Précédent
-                </Button>
-              )}
-              {step < 3 ? (
+              {step === 1 && (
                 <Button
                   type="button"
                   onClick={onNext}
                   disabled={mutationLoading}
                 >
-                  Suivant
-                </Button>
-              ) : (
-                <Button type="submit" disabled={mutationLoading}>
-                  {mutationLoading ? "Création..." : "Créer l’élection"}
+                  Next
                 </Button>
               )}
+
+              {step === 2 && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(step - 1)}
+                    disabled={mutationLoading}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={onNext}
+                    disabled={mutationLoading}
+                  >
+                    Next
+                  </Button>
+                </>
+              )}
+
+              {step === 3 && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(step - 1)}
+                    disabled={mutationLoading}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={mutationLoading}
+                  >
+                    {mutationLoading ? "Création..." : "Créer l’élection"}
+                  </Button>
+                </>
+              )}
+
             </div>
           </Card>
         </form>

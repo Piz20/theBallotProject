@@ -107,10 +107,12 @@ class Election(models.Model):
     )
 
     def clean(self):
-        # Supprimé la validation de la relation entre start_date et end_date
         super().clean()
         if not self.image_file and not self.image_url:
-            raise ValidationError(("Vous devez fournir soit un fichier image, soit une URL d'image."))
+            raise ValidationError("Vous devez fournir soit un fichier image, soit une URL d'image.")
+        if self.image_file and self.image_url:
+            raise ValidationError("Ne fournissez pas à la fois une image locale et une URL d'image.")
+
 
     def save(self, *args, **kwargs):
         self.full_clean()  # Appelle clean() + validation des champs
