@@ -7,7 +7,9 @@ from django.core.files.base import ContentFile
 from django.core.validators import MaxLengthValidator, URLValidator
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
+from django.utils.text import slugify
 from graphene_file_upload.scalars import Upload
+import base64
 
 # Définir le type GraphQL pour Election
 class ElectionType(DjangoObjectType):
@@ -65,6 +67,7 @@ class UpdateElection(graphene.Mutation):
 
 
 
+# Mutation pour créer une élection
 class CreateElection(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
@@ -72,7 +75,7 @@ class CreateElection(graphene.Mutation):
         start_date = graphene.DateTime(required=False)
         end_date = graphene.DateTime(required=False)
         image_url = graphene.String(required=False)  # URL de l'image
-        image_file = Upload(required=False)  # Fichier image
+        image_file = graphene.String(required=False)  # Image en base64 (au lieu de Upload)
 
     success = graphene.Boolean()
     message = graphene.String()
@@ -95,12 +98,16 @@ class CreateElection(graphene.Mutation):
         # Variable pour stocker le chemin de l'image
         image_path = None
 
-        # Si un fichier image est fourni, gérer l'upload du fichier
+        # Si un fichier image en base64 est fourni, gérer l'upload
         if image_file:
             try:
-                # Créer un nom de fichier unique pour éviter les conflits
-                image_name = f"{name}_image.jpg"
-                image_path = default_storage.save(f"election_images/{image_name}", image_file)
+                # Décoder l'image base64
+                format, imgstr = image_file.split(';base64,')  # Récupérer la partie après ";base64,"
+                ext = format.split('/')[-1]  # Récupérer l'extension de l'image (ex. 'png', 'jpeg')
+                image_data = ContentFile(base64.b64decode(imgstr), name=f"{slugify(name)}.{ext}")
+                
+                # Sauvegarder l'image sur le serveur avec un nom unique basé sur le nom de l'élection
+                image_path = default_storage.save(f"election_images/{image_data.name}", image_data)
             except Exception as e:
                 return CreateElection(success=False, message=f"Erreur lors de l'upload de l'image : {str(e)}")
         
@@ -122,7 +129,6 @@ class CreateElection(graphene.Mutation):
             return CreateElection(success=True, message="Élection créée avec succès!", election=election)
         except Exception as e:
             return CreateElection(success=False, message=f"Erreur lors de la création de l'élection : {str(e)}")
-
 
 
 # Mutation pour supprimer une élection

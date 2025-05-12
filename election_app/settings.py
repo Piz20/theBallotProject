@@ -50,6 +50,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'authorization',
     'x-csrftoken',
+    'apollo-require-preflight',  # ➕ Header manquant pour Apollo
+
 ]
 
 

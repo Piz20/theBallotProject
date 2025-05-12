@@ -38,7 +38,7 @@ export const CREATE_ELECTION = gql`
     $startDate: DateTime
     $endDate: DateTime
     $imageUrl: String
-    $imageFile: Upload
+    $imageFile: String
   ) {
     createElection(
       name: $name
@@ -57,6 +57,7 @@ export const CREATE_ELECTION = gql`
         startDate
         endDate
         imageUrl
+        
       }
     }
   }

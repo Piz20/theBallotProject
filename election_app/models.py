@@ -170,3 +170,12 @@ class Vote(models.Model):
 
     def __str__(self):
         return f"{self.user.email} a voté pour {self.candidate.name} ({self.election.name})"
+
+
+class ImageTest(models.Model):
+    id = models.BigAutoField(primary_key=True)  # Champ id explicitement défini
+    image = models.ImageField(upload_to='test_images/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image {self.id}"

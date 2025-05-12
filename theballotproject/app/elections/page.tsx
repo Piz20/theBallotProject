@@ -63,7 +63,7 @@ const RANDOM_IMAGES = [
 
 const mapElectionData = (apiData: any[]): Election[] => {
   return apiData.map((item) => {
-    console.log(item.imageUrl);
+    console.log(item.imageFile);
     return {
       id: item.id,
       name: item.name,
@@ -357,7 +357,7 @@ export default function ElectionPage() {
                     key={election.id}
                     className="group hover:shadow-lg transition-all duration-300 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm animate-fadeIn"
                   >
-                    <LazyImage src={election.imageUrl || "https://via.placeholder.com/150"} alt={election.name || "Election image"} />
+                    <LazyImage src={election.imageUrl || election.imageFile || "https://via.placeholder.com/150"} alt={election.name || "Election image"} />
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${election.status === "Ongoing" ? "bg-green-100 text-green-800 animate-pulse" :

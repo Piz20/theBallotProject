@@ -24,8 +24,10 @@ import Footer from "@/components/ui/footer";
 import { Toaster } from "@/components/ui/toaster";
 // Import de ta mutation depuis un autre fichier
 import { CREATE_ELECTION } from "@/lib/mutations/electionMutations";
+  
 import { title } from "node:process";
 import { useToastStore } from "@/hooks/useToastStore";
+import { UPLOAD_IMAGE } from "@/lib/mutations/imageMutations";
 
 const electionSchema = z.object({
   title: z
@@ -51,6 +53,8 @@ export default function CreateElectionPage() {
   // Hook mutation Apollo
   const [createElection, { loading: mutationLoading, error: mutationError }] =
     useMutation(CREATE_ELECTION);
+  
+  const [uploadImage] = useMutation(UPLOAD_IMAGE);
 
   const form = useForm<ElectionFormValues>({
     resolver: zodResolver(electionSchema),
@@ -93,64 +97,68 @@ export default function CreateElectionPage() {
     console.log("Étape actuelle :", step);
   };
 
+  
   const onSubmit = async (data: ElectionFormValues) => {
-    const variables: any = {
-      name: data.title,
-      description: data.description,
-    };
-
-    // Vérifie le type d'image (URL ou fichier)
-    if (data.electionImage) {
-      if (data.electionImage.type === "url") {
-        // Si l'utilisateur a fourni une URL, on l'ajoute directement dans les variables
-        variables.imageUrl = data.electionImage.value;
-      } else {
-        // Sinon on suppose que c'est un fichier et on l'ajoute
-        if (data.electionImage.type === "file") {
-          variables.imageFile = data.electionImage.value;
-        } else {
-          console.error("❌ L'image fournie n'est pas un fichier valide.");
-          return;
-        }
-      }
-    }
-
-    console.log("Données soumises :", variables);  // Log complet des données
-
-    try {
-      const result = await createElection({ variables });
-
-      if (result.data.createElection.success) {
-
-        addToast({
-          title: "Success",
-          message: "Élection created successfuly !✅",
-          variant: "success",
-        })
-
-        setTimeout(() => {
-          router.push("/elections");
-        }, 3000);
-
-        console.log("✅ Élection créée :", result.data.createElection.election);
-      } else {
-        console.error("❌ Erreur création :", result.data.createElection.message);
-      }
-    } catch (err) {
-      addToast({
-        title: "Error",
-        message: "An error occurred when creating election.❌",
-        variant: "error",
-      });
-      console.error("⚠️ Mutation échouée :", err);
-      if (err instanceof Error && "networkError" in err) {
-        console.error("Erreur réseau :", (err as any).networkError);
-      }
-      if (err instanceof Error && "graphQLErrors" in err) {
-        (err as any).graphQLErrors.forEach((e: any) => console.error("Erreur GraphQL :", e.message));
-      }
-    }
+  const variables: any = {
+    name: data.title,
+    description: data.description,
   };
+
+  // Vérifier le type d'image (URL ou fichier)
+  const { electionImage } = data;
+
+  if (!electionImage) {
+    addToast({ title: "Error", message: "Veuillez fournir une image.❌", variant: "error" });
+    return;
+  }
+
+  // Cas pour l'URL
+  if (electionImage.type === "url") {
+    variables.imageUrl = electionImage.value;
+  } 
+  // Cas pour le fichier
+  else if (electionImage.type === "file") {
+    const file = electionImage.value as File;
+    try {
+      const base64Image = await convertToBase64(file);
+      variables.imageFile = base64Image;
+    } catch (err) {
+      addToast({ title: "Error", message: "Erreur lors de la conversion en base64.❌", variant: "error" });
+      console.error("Erreur lors de la conversion du fichier en base64", err);
+      return;
+    }
+  } else {
+    addToast({ title: "Error", message: "Type d'image invalide.❌", variant: "error" });
+    return;
+  }
+
+  try {
+    const result = await createElection({
+      variables,
+      context: { hasUpload: true },
+    });
+
+    if (result.data.createElection.success) {
+      addToast({ title: "Success", message: "Élection créée avec succès !✅", variant: "success" });
+      setTimeout(() => router.push("/elections"), 3000);
+    } else {
+      addToast({ title: "Error", message: result.data.createElection.message, variant: "error" });
+    }
+  } catch (err) {
+    addToast({ title: "Error", message: "Erreur lors de la création de l'élection.❌", variant: "error" });
+    console.error("Erreur mutation : ", err);
+  }
+};
+
+// Fonction pour convertir un fichier en base64
+const convertToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 
 
   return (
