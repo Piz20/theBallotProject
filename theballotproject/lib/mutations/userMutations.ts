@@ -2,6 +2,23 @@
 
 import { gql } from "@apollo/client";
 
+
+
+// Requête GraphQL pour obtenir l'utilisateur connecté
+export const ME_QUERY = gql`
+  query Me {
+    me {
+      id
+      username
+      firstName
+      lastName
+      email
+    }
+  }
+`;
+
+
+
 /**
  * Mutation pour l'enregistrement d'un nouvel utilisateur.
  */
@@ -34,6 +51,7 @@ export const REGISTER_USER = gql`
     }
   }
 `;
+
 
 /**
  * Mutation pour se connecter (login) avec email, mot de passe et option "remember me".

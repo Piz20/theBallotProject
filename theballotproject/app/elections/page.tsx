@@ -85,7 +85,7 @@ const mapElectionData = (apiData: any[]): Election[] => {
 export default function ElectionPage() {
   // Fetches election data using Apollo Client.
   const { loading, error, data } = useQuery(GET_ALL_ELECTIONS);
-
+  
   // Manages component state: all elections, search term, filtered/displayed elections, pagination, and loading states.
   const [elections, setElections] = useState<Election[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -208,6 +208,7 @@ export default function ElectionPage() {
               {/* User actions and mobile menu button. */}
               <div className="flex items-center gap-6">
                 <Button variant="ghost" size="sm" className="text-gray-700 hover:text-primary">
+                  
                   <User className="h-5 w-5" />
                 </Button>
                 <Button variant="ghost" size="sm" className="relative">
@@ -268,7 +269,7 @@ export default function ElectionPage() {
             <Button asChild>
               <Link href="/elections/create">
                 <Plus className="mr-2 h-5 w-5" />
-                Créer une élection {/* Create an election */}
+                Create an election {/* Create an election */}
               </Link>
             </Button>
           </div>
@@ -327,7 +328,7 @@ export default function ElectionPage() {
           <div className="relative mb-8">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher une élection (nom, date, description...)..." // Search for an election (name, date, description...)...
+              placeholder="Search for an election (name, date, description...)..." // Search for an election (name, date, description...)
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -357,7 +358,14 @@ export default function ElectionPage() {
                     key={election.id}
                     className="group hover:shadow-lg transition-all duration-300 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm animate-fadeIn"
                   >
-                    <LazyImage src={election.imageUrl || election.imageFile || "https://via.placeholder.com/150"} alt={election.name || "Election image"} />
+                    <LazyImage
+                      src={
+                        election.imageUrl
+                        || (election.imageFile ? `http://localhost:8000/media/${election.imageFile}` : null)
+                        || "https://via.placeholder.com/150"
+                      }
+                      alt={election.name || "Election image"}
+                    />
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${election.status === "Ongoing" ? "bg-green-100 text-green-800 animate-pulse" :
