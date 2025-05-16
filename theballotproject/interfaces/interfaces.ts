@@ -16,15 +16,21 @@ export interface User {
 // ====================
 // Interfaces Candidat
 // ====================
+// types/Candidate.ts
+
 export interface Candidate {
   id: number;
+  election: {
+    id: number;
+    name: string;
+  };
   name: string;
   bio: string;
-  voteCount: number;                // ✅ camelCase
-  profilePicture?: string | null;   // ✅ camelCase
-  createdAt: string;
-  election: number | Election;
+  vote_count: number;
+  profile_picture?: string | null;
+  created_at: string;
 }
+
 
 // ====================
 // Interfaces Élection
@@ -33,8 +39,8 @@ export interface Election {
   id: number;
   name: string;
   description: string;
-  startDate: string;                // ✅ camelCase
-  endDate: string;
+  startDate: Date;                // ✅ camelCase
+  endDate: Date;
   createdAt: string;
   imageFile?: string | null;        // ✅ camelCase
   imageUrl?: string | null;         // ✅ camelCase

@@ -20,8 +20,9 @@ import { Toaster } from '@/components/ui/toaster';
 import { useToastStore } from '@/hooks/useToastStore';
 
 
-import { useMutation } from "@apollo/client";
-import { REGISTER_USER, LOGIN_USER } from "@/lib/mutations/userMutations"; // Assurez-vous que vous avez bien ce fichier et cette mutation.
+import { useMutation, useQuery } from "@apollo/client";
+import { REGISTER_USER, LOGIN_USER, ME_QUERY } from "@/lib/mutations/userMutations"; // Assurez-vous que vous avez bien ce fichier et cette mutation.
+import Loader from "@/components/ui/loader";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -245,6 +246,13 @@ export default function AuthPage() {
       document.title = "Register - TheBallotProject";
     }
   }, [activeTab]);
+
+
+  const { data: meData, loading: meLoading } = useQuery(ME_QUERY, {
+    fetchPolicy: "network-only",
+  });
+
+
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-background to-background/90 flex items-center justify-center p-4 relative overflow-hidden">

@@ -27,7 +27,6 @@ import { CREATE_ELECTION } from "@/lib/mutations/electionMutations";
   
 import { title } from "node:process";
 import { useToastStore } from "@/hooks/useToastStore";
-import { UPLOAD_IMAGE } from "@/lib/mutations/imageMutations";
 
 const electionSchema = z.object({
   title: z
@@ -54,8 +53,6 @@ export default function CreateElectionPage() {
   const [createElection, { loading: mutationLoading, error: mutationError }] =
     useMutation(CREATE_ELECTION);
   
-  const [uploadImage] = useMutation(UPLOAD_IMAGE);
-
   const form = useForm<ElectionFormValues>({
     resolver: zodResolver(electionSchema),
     defaultValues: {
