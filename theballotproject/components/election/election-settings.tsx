@@ -11,12 +11,12 @@ import VotersManagement from './voters-management';
 import CandidatesManagement from './candidates-management';
 import { Election, User, Candidate } from '../../interfaces/interfaces';
 
-interface ElectionDetailsProps {
+interface ElectionSettingsProps {
   election: Election;
   onUpdateElection: (election: Election) => void;
 }
 
-const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateElection }) => {
+const ElectionSettings: React.FC<ElectionSettingsProps> = ({ election, onUpdateElection }) => {
   const [activeTab, setActiveTab] = useState<'dates' | 'voters' | 'candidates'>('dates');
   const [isDirty, setIsDirty] = useState(false);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
@@ -54,7 +54,7 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
 
   const handlePublish = useCallback(() => {
     if (canPublish()) {
-      updateElection({ status: 'published' });
+      updateElection({ status: 'active' });  // 'active' instead of 'published'
     }
   }, [canPublish, updateElection]);
 
@@ -71,13 +71,13 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
             <div>
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                 election.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                election.status === 'published' ? 'bg-blue-100 text-blue-800' :
+                election.status === 'upcoming' ? 'bg-blue-100 text-blue-800' :
                 election.status === 'active' ? 'bg-green-100 text-green-800' :
                 'bg-purple-100 text-purple-800'
               }`}>
-                {election.status === 'draft' ? 'Brouillon' :
-                 election.status === 'published' ? 'Publié' :
-                 election.status === 'active' ? 'En cours' : 'Terminé'}
+                {election.status === 'draft' ? 'Draft' :
+                 election.status === 'upcoming' ? 'Upcoming' :
+                 election.status === 'active' ? 'Active' : 'Completed'}
               </span>
             </div>
             <button
@@ -88,7 +88,7 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
               disabled={!isDirty}
             >
               <Save className="w-4 h-4 inline-block mr-2" />
-              Enregistrer
+              Save
             </button>
           </div>
         </div>
@@ -96,7 +96,7 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
         {showSavedMessage && (
           <div className="mt-4 p-3 bg-green-50 text-green-800 rounded-md flex items-center">
             <span className="flex-shrink-0 mr-2">✓</span>
-            <span>Les modifications ont été enregistrées avec succès</span>
+            <span>Changes have been successfully saved</span>
           </div>
         )}
       </div>
@@ -113,7 +113,7 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
             onClick={() => setActiveTab('dates')}
           >
             <CalendarClock className="w-4 h-4 inline-block mr-2" />
-            Dates de l'élection
+            Election Dates
           </button>
           <button
             className={`px-6 py-4 font-medium text-sm focus:outline-none whitespace-nowrap ${
@@ -124,7 +124,7 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
             onClick={() => setActiveTab('voters')}
           >
             <Users className="w-4 h-4 inline-block mr-2" />
-            Électeurs
+            Voters
           </button>
           <button
             className={`px-6 py-4 font-medium text-sm focus:outline-none whitespace-nowrap ${
@@ -135,7 +135,7 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
             onClick={() => setActiveTab('candidates')}
           >
             <UserCircle className="w-4 h-4 inline-block mr-2" />
-            Candidats
+            Candidates
           </button>
         </div>
       </div>
@@ -172,11 +172,11 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
             <div className="flex items-start">
               <AlertTriangle className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-medium text-blue-800">Cette élection est en mode brouillon</h3>
+                <h3 className="font-medium text-blue-800">This election is in draft mode</h3>
                 <p className="text-sm text-blue-600 mt-1">
                   {canPublish()
-                    ? "Vous pouvez maintenant publier cette élection pour permettre aux électeurs de voter."
-                    : "Pour publier cette élection, vous devez configurer les dates, ajouter des électeurs et des candidats."}
+                    ? "You can now publish this election to allow voters to vote."
+                    : "To publish this election, you must configure dates, add voters, and candidates."}
                 </p>
               </div>
             </div>
@@ -189,7 +189,7 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
               disabled={!canPublish()}
               onClick={handlePublish}
             >
-              Publier l'élection
+              Publish Election
             </button>
           </div>
         </div>
@@ -198,4 +198,4 @@ const ElectionDetails: React.FC<ElectionDetailsProps> = ({ election, onUpdateEle
   );
 };
 
-export default ElectionDetails;
+export default ElectionSettings;

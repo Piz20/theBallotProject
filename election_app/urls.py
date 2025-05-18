@@ -20,7 +20,7 @@ from django.urls import path , include
 from django.conf import settings
 from graphene_django.views import GraphQLView
 
-from election_app.api.schema import schema
+from election_app.api.graphql.schema import schema
 from . import views
 from .views import remove_vote_view
 

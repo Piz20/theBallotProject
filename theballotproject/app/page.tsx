@@ -9,7 +9,7 @@ const HomePageRedirect: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/home.html'); // Rediriger vers le fichier public
+    router.push('/auth'); // Rediriger vers le fichier public
   }, [router]);
 
   return null; // Pas de rendu nécessaire, juste une redirection

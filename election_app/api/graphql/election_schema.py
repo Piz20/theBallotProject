@@ -1,6 +1,6 @@
 import graphene
 from graphene_django.types import DjangoObjectType
-from ..models import Election
+from ...models import Election
 from .utils import check_authentication  # Importer la fonction de vérification d'authentification
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -157,7 +157,7 @@ class DeleteElection(graphene.Mutation):
 # Requête pour lister et obtenir une élection
 class Query(graphene.ObjectType):
     all_elections = graphene.List(ElectionType)
-    election = graphene.Field(ElectionType, id=graphene.Int())
+    election = graphene.Field(ElectionType, id=graphene.Int(required=True))
 
     def resolve_all_elections(self, info):
         user = check_authentication(info)  # Vérifier l'authentification

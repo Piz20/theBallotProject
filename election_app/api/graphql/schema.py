@@ -1,6 +1,6 @@
 import graphene
 
-from election_app.api import election_schema, user_schema, vote_schema, candidate_schema , query_generator_schema , mail_schema
+from election_app.api.graphql import election_schema, user_schema, vote_schema, candidate_schema , query_generator_schema , mail_schema
 
 class Query(
     election_schema.Query,

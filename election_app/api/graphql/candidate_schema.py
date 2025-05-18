@@ -1,7 +1,7 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 from django.db import models
-from ..models import Candidate, Election
+from ...models import Candidate, Election
 from .utils import check_authentication  # Importer la fonction de vérification d'authentification
 
 # Type GraphQL pour Candidate

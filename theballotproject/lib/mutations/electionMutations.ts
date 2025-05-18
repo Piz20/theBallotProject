@@ -18,13 +18,22 @@ export const GET_ALL_ELECTIONS = gql`
 `;
 
 export const GET_ELECTION_BY_ID = gql`
-  query {
+  query GetElectionById($id: ID!) {
     election(id: $id) {
       id
       name
       description
       startDate
       endDate
+      createdAt
+      imageUrl
+      imageFile
+      eligibleVoters {
+        id
+        name
+        email
+        createdAt
+      }
     }
   }
 `;

@@ -2,7 +2,7 @@ import graphene
 from graphene_django.types import DjangoObjectType
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from ..models import Candidate, Vote, Election
+from ...models import Candidate, Vote, Election
 from .utils import check_authentication  # Importer la fonction de vérification d'authentification
 
 # Type GraphQL pour Vote

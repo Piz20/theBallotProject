@@ -63,6 +63,7 @@ def validate_future_date(value):
         raise ValidationError("La date doit être dans le futur.")
 
 class Election(models.Model):
+  
     id = models.AutoField(primary_key=True)
     name = models.CharField(
         max_length=255,
@@ -78,7 +79,7 @@ class Election(models.Model):
     end_date = models.DateTimeField(validators=[validate_future_date], null=True, blank=True)
     
     eligible_voters = models.ManyToManyField(
-        User,  # Utilisation du modèle dynamique
+        User,
         related_name='eligible_elections',
         blank=True
     )
@@ -99,11 +100,25 @@ class Election(models.Model):
     )
 
     created_by = models.ForeignKey(
-        User,  # Utilisation du modèle dynamique
+        User,
         related_name='created_elections',
         on_delete=models.CASCADE,
         null=False,
         blank=False
+    )
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('upcoming', 'Upcoming'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+    ]
+
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='draft',
+        help_text="Current status of the election"
     )
 
     def clean(self):
@@ -113,13 +128,11 @@ class Election(models.Model):
         if self.image_file and self.image_url:
             raise ValidationError("Ne fournissez pas à la fois une image locale et une URL d'image.")
 
-
     def save(self, *args, **kwargs):
-        self.full_clean()  # Appelle clean() + validation des champs
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def get_image(self):
-        """Retourne l’image (locale si disponible, sinon l’URL distante)."""
         if self.image_file:
             return self.image_file.url
         return self.image_url

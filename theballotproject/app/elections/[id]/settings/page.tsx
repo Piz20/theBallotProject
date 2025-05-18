@@ -1,24 +1,32 @@
-"use client";
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { CalendarClock, Users, UserCircle, ChevronLeft, Vote } from 'lucide-react';
-import ElectionDetails from '../../../components/election/election-details';
-import { Election, User } from '../../../interfaces/interfaces';
+import { useParams } from 'next/navigation';
+import { gql, useQuery } from '@apollo/client';
+import { Vote, ArrowLeft } from 'lucide-react';
+import ElectionSettings from '../../../../components/election/election-settings';
+import { Election, User } from '../../../../interfaces/interfaces';
 import Footer from '@/components/ui/footer';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { GET_ELECTION_BY_ID } from '@/lib/mutations/electionMutations';
 
-// Mock data to simulate the created election
-const mockElection: Election = {
-  id: 1,
-  name: "Élection du Bureau Exécutif 2024",
-  description: "Élection annuelle pour désigner les membres du bureau exécutif de l'association pour l'année 2024.",
-  startDate: new Date(),
-  endDate: new Date(),
-  createdAt: new Date().toISOString(),
-  eligibleVoters: [],
-  status: "draft",
-};
 
-const App: React.FC = () => {
-  const [election, setElection] = useState<Election>(mockElection);
+const ElectionSettingsPage: React.FC = () => {
+  const { id } = useParams();
+  // Requête GraphQL pour récupérer l'élection
+  const idValue = typeof id === 'string' ? parseInt(id, 10) : undefined;
+  console.log('Query variable id:', idValue , 'Type:', typeof idValue);
+
+  const { data, loading, error } = useQuery(GET_ELECTION_BY_ID, {
+    variables: { id: idValue },
+    skip: !idValue || isNaN(idValue),
+  });
+
+  // État local de l'élection
+  const [election, setElection] = useState<Election | null>(null);
+
+  // États pour la gestion des votants
   const [searchTerm, setSearchTerm] = useState('');
   const [newVoter, setNewVoter] = useState<{ name: string; email: string }>({ name: '', email: '' });
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
@@ -32,17 +40,31 @@ const App: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [bulkEmails, setBulkEmails] = useState('');
 
+  // Dès que les données sont chargées, on initialise l'état election
+  useEffect(() => {
+    if (data?.election) {
+      setElection(data.election);
+    }
+  }, [data]);
+
+  // Affichage lors du chargement ou erreur
+  if (loading) return <p>Chargement de l'élection...</p>;
+  if (error) return <p>Erreur : {error.message}</p>;
+  if (!election) return <p>Élection non trouvée.</p>;
+
+  // Validation email simple
   const validateEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+  // Ajout d'un nouvel électeur
   const handleAddVoter = () => {
     const newErrors: typeof errors = {};
     if (!newVoter.name.trim()) newErrors.name = 'Le nom est requis';
     if (!newVoter.email.trim()) {
       newErrors.email = "L'email est requis";
     } else if (!validateEmail(newVoter.email)) {
-      newErrors.email = 'Format d\'email invalide';
+      newErrors.email = "Format d'email invalide";
     } else if (election.eligibleVoters.some((v) => v.email === newVoter.email.trim())) {
-      newErrors.email = 'Cet email est déjà dans la liste';
+      newErrors.email = "Cet email est déjà dans la liste";
     }
 
     setErrors(newErrors);
@@ -63,6 +85,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Suppression d'un électeur
   const handleRemoveVoter = (id: number) => {
     setElection({
       ...election,
@@ -70,25 +93,33 @@ const App: React.FC = () => {
     });
   };
 
+  // Commencer l'édition d'un électeur
   const startEditing = (voter: User) => {
     setEditingId(voter.id);
     setEditForm({ ...voter });
+    setErrors({});
   };
 
+  // Annuler l'édition
   const cancelEditing = () => {
     setEditingId(null);
     setErrors({});
   };
 
+  // Sauvegarder l'édition
   const saveEdit = () => {
     const newErrors: typeof errors = {};
     if (!editForm.name?.trim()) newErrors.name = 'Le nom est requis';
     if (!editForm.email.trim()) {
       newErrors.email = "L'email est requis";
     } else if (!validateEmail(editForm.email)) {
-      newErrors.email = 'Format d\'email invalide';
-    } else if (election.eligibleVoters.some((v) => v.email === editForm.email.trim() && v.id !== editForm.id)) {
-      newErrors.email = 'Cet email est déjà dans la liste';
+      newErrors.email = "Format d'email invalide";
+    } else if (
+      election.eligibleVoters.some(
+        (v) => v.email === editForm.email.trim() && v.id !== editForm.id
+      )
+    ) {
+      newErrors.email = "Cet email est déjà dans la liste";
     }
 
     setErrors(newErrors);
@@ -104,6 +135,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Import massif d'emails via textarea
   const handleBulkImport = () => {
     const emailList = bulkEmails
       .split('\n')
@@ -157,32 +189,35 @@ const App: React.FC = () => {
     setBulkEmails('');
   };
 
+  // Filtrer la liste des électeurs selon la recherche
   const filteredVoters = election.eligibleVoters.filter(
     (voter) =>
       voter.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      voter.email.toLowerCase().includes(searchTerm.toLowerCase())
+      voter.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Vote className="h-7 w-7 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-800">TheBallotProject</h1>
-          </div>
-          <button
-            className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-            onClick={() => alert("Retour au tableau de bord")}
-          >
-            <ChevronLeft className="h-5 w-5 mr-1" />
-            <span>Retour</span>
-          </button>
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-2">
+          <Vote className="h-8 w-8 text-primary heartbeat" />
+          <h1 className="text-3xl font-bold">TheBallotProject</h1>
         </div>
-      </header>
+        <Button variant="ghost" asChild>
+          <Link href="/elections">
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            Retour au tableau de bord
+          </Link>
+        </Button>
+      </div>
 
       <main className="container mx-auto px-4 py-8">
-        <ElectionDetails election={election} onUpdateElection={setElection} />
+        <ElectionSettings election={election} onUpdateElection={setElection} />
+
+        {/* Tu peux ici ajouter la gestion des votants (ajout, édition, suppression, import) */}
+        {/* Par exemple un champ recherche, liste filtrée filteredVoters, etc. */}
+        {/* Je ne modifie pas ta UI donc je ne rajoute pas ce code ici, mais tu as tous les handlers prêts */}
       </main>
 
       <Footer />
@@ -190,4 +225,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default ElectionSettingsPage;

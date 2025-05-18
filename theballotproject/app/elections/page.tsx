@@ -61,6 +61,8 @@ const RANDOM_IMAGES = [
   "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg"
 ];
 
+const now = new Date();
+
 const mapElectionData = (apiData: any[]): Election[] => {
   return apiData.map((item) => {
     console.log(item.imageFile);
@@ -71,9 +73,12 @@ const mapElectionData = (apiData: any[]): Election[] => {
       startDate: item.startDate,
       endDate: item.endDate,
       createdAt: item.createdAt,
-      status: new Date(item.endDate) > new Date()
-        ? (new Date(item.startDate) <= new Date() ? "Ongoing" : "Upcoming")
-        : "Completed",
+      status:
+        new Date(item.endDate) > now
+          ? new Date(item.startDate) <= now
+            ? "Active"
+            : "Upcoming"
+          : "Completed",
       imageUrl: item.imageUrl,
       imageFile: item.imageFile,
       eligibleVoters: item.eligibleVoters || 0
@@ -85,7 +90,7 @@ const mapElectionData = (apiData: any[]): Election[] => {
 export default function ElectionPage() {
   // Fetches election data using Apollo Client.
   const { loading, error, data } = useQuery(GET_ALL_ELECTIONS);
-  
+
   // Manages component state: all elections, search term, filtered/displayed elections, pagination, and loading states.
   const [elections, setElections] = useState<Election[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,6 +138,11 @@ export default function ElectionPage() {
     return filteredElections.slice(indexOfFirstElection, indexOfLastElection);
   };
 
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages || 1);
+    }
+  }, [totalPages]);
   // Pagination controls
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -208,7 +218,7 @@ export default function ElectionPage() {
               {/* User actions and mobile menu button. */}
               <div className="flex items-center gap-6">
                 <Button variant="ghost" size="sm" className="text-gray-700 hover:text-primary">
-                  
+
                   <User className="h-5 w-5" />
                 </Button>
                 <Button variant="ghost" size="sm" className="relative">
@@ -358,20 +368,33 @@ export default function ElectionPage() {
                     key={election.id}
                     className="group hover:shadow-lg transition-all duration-300 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm animate-fadeIn"
                   >
-                    <LazyImage
-                      src={
-                        election.imageUrl
-                        || (election.imageFile ? `http://localhost:8000/media/${election.imageFile}` : null)
-                        || "https://via.placeholder.com/150"
-                      }
-                      alt={election.name || "Election image"}
-                    />
+                    <div className="relative">
+                      <LazyImage
+                        src={
+                          election.imageUrl
+                          || (election.imageFile ? `http://localhost:8000/media/${election.imageFile}` : null)
+                          || "https://via.placeholder.com/150"
+                        }
+                        alt={election.name || "Election image"}
+
+                      />
+                      {/* Icône engrenage */}
+                      <Link
+                        href={`/elections/${election.id}/settings`}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/70 p-1 rounded-full shadow hover:bg-white"
+                      >
+                        <Settings className="w-5 h-5 text-gray-600 hover:text-primary" />
+                      </Link>
+                    </div>
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${election.status === "Ongoing" ? "bg-green-100 text-green-800 animate-pulse" :
-                          election.status === "Upcoming" ? "bg-blue-100 text-blue-800 animate-pulse" :
-                            "bg-gray-100 text-gray-800"
+                        <span className={`... ${election.status === "Active"
+                          ? "bg-green-100 text-green-800 animate-pulse"
+                          : election.status === "Upcoming"
+                            ? "bg-blue-100 text-blue-800 animate-pulse"
+                            : "bg-gray-100 text-gray-800"
                           }`}>
+
                           {election.status}
                         </span>
                         <Calendar className="h-4 w-4 text-gray-500" />

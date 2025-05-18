@@ -165,7 +165,7 @@ const convertToBase64 = (file: File): Promise<string> =>
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
-            <Vote className="h-8 w-8 text-primary animate-pulse" />
+            <Vote className="h-8 w-8 text-primary heartbeat" />
             <h1 className="text-3xl font-bold">TheBallotProject</h1>
           </div>
           <Button variant="ghost" asChild>

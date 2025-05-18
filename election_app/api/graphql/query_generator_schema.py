@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from sqlalchemy import create_engine, text
 from google import genai
-from election_app.api.utils import reformat_html
+from election_app.api.graphql.utils import reformat_html
 import pandas as pd
 from dotenv import load_dotenv
 import os
@@ -73,7 +73,7 @@ def generate_d3_code(prompt, data):
     request = f"""  
     Voici le schéma de ma base de données : {schema_bd}.
 
-    Donne-moi le code HTML avec un beau CSS, une légende du graphique, bref quelque chose de très détaillé, même lorsqu’on survole avec la souris.
+    Donne-moi le code HTML avec un beau CSS, une légende du graphique, bref quelque chose de très détaillé, même lorsqu’on survole avec la souris , tu dois etre capable de representer tous les graphes de d3js . Je dois pouvoir faire des comparaisons avec n'importe quoi
 
     Il y aura des explications précises en dessous du graphique. Il doit aussi y avoir la possibilité que la requête ne retourne pas de résultats graphiques, mais par exemple des données simples avec des explications écrites. Tu dois avoir assez de jugeote pour savoir si l’on doit afficher un graphique ou non, même si ce n’est pas précisé explicitement.
 
