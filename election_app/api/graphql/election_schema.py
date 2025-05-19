@@ -1,6 +1,6 @@
 import graphene
 from graphene_django.types import DjangoObjectType
-from ...models import Election
+from ...models import Election , CustomUser, Candidate
 from .utils import check_authentication  # Importer la fonction de vérification d'authentification
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -20,7 +20,6 @@ class ElectionType(DjangoObjectType):
 
 
 
-# Mutation pour mettre à jour une élection
 class UpdateElection(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
@@ -28,36 +27,50 @@ class UpdateElection(graphene.Mutation):
         start_date = graphene.DateTime()
         end_date = graphene.DateTime()
         description = graphene.String()
+        status = graphene.String()
+        eligible_voters_ids = graphene.List(graphene.Int)
+        candidate_ids = graphene.List(graphene.Int)
 
     success = graphene.Boolean()
     message = graphene.String()
     election = graphene.Field(ElectionType)
 
-    def mutate(self, info, id, name=None, start_date=None, end_date=None, description=None):
-        user = check_authentication(info)  # Vérifier l'authentification
+    def mutate(self, info, id, name=None, start_date=None, end_date=None, description=None, status=None, eligible_voters_ids=None, candidate_ids=None):
+        user = check_authentication(info)
         if not user:
             return UpdateElection(success=False, message="Authentification requise.")
 
         try:
-            # Récupérer l'élection existante
             election = Election.objects.get(id=id)
 
-            # Vérifier si le nom a été changé et si ce nouveau nom existe déjà
             if name and name != election.name:
                 if Election.objects.filter(name=name).exists():
                     return UpdateElection(success=False, message="Une élection avec ce nom existe déjà.")
-
-            # Mettre à jour les champs si nécessaire
-            if name:
                 election.name = name
+
             if start_date:
                 election.start_date = start_date
             if end_date:
                 election.end_date = end_date
             if description:
                 election.description = description
+            if status:
+                election.status = status
 
             election.save()
+
+            # Mise à jour des votants éligibles
+            if eligible_voters_ids is not None:
+                voters = CustomUser.objects.filter(id__in=eligible_voters_ids)
+                election.eligible_voters.set(voters)
+
+            # Mise à jour des candidats
+            if candidate_ids is not None:
+                candidates = Candidate.objects.filter(id__in=candidate_ids)
+                election.candidates.set(candidates)
+
+            election.save()
+
             return UpdateElection(success=True, message="Élection mise à jour avec succès!", election=election)
 
         except Election.DoesNotExist:

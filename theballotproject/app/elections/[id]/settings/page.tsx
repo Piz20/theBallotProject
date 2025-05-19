@@ -10,13 +10,12 @@ import Footer from '@/components/ui/footer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { GET_ELECTION_BY_ID } from '@/lib/mutations/electionMutations';
-
+import Loader from '@/components/ui/loader';
 
 const ElectionSettingsPage: React.FC = () => {
   const { id } = useParams();
   // Requête GraphQL pour récupérer l'élection
   const idValue = typeof id === 'string' ? parseInt(id, 10) : undefined;
-  console.log('Query variable id:', idValue , 'Type:', typeof idValue);
 
   const { data, loading, error } = useQuery(GET_ELECTION_BY_ID, {
     variables: { id: idValue },
@@ -47,11 +46,10 @@ const ElectionSettingsPage: React.FC = () => {
     }
   }, [data]);
 
-  // Affichage lors du chargement ou erreur
-  if (loading) return <p>Chargement de l'élection...</p>;
+  if (loading) return <Loader />;
+
   if (error) return <p>Erreur : {error.message}</p>;
   if (!election) return <p>Élection non trouvée.</p>;
-
   // Validation email simple
   const validateEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -197,31 +195,35 @@ const ElectionSettingsPage: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-2">
-          <Vote className="h-8 w-8 text-primary heartbeat" />
-          <h1 className="text-3xl font-bold">TheBallotProject</h1>
-        </div>
-        <Button variant="ghost" asChild>
-          <Link href="/elections">
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            Retour au tableau de bord
-          </Link>
-        </Button>
+    <>
+          <title>TheBallotProject - ElectionSettings</title>
+
+  <div className="container mx-auto px-4 py-8">
+    {/* Header */}
+    <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center gap-2">
+        <Vote className="h-8 w-8 text-primary heartbeat" />
+        <h1 className="text-3xl font-bold">TheBallotProject</h1>
       </div>
-
-      <main className="container mx-auto px-4 py-8">
-        <ElectionSettings election={election} onUpdateElection={setElection} />
-
-        {/* Tu peux ici ajouter la gestion des votants (ajout, édition, suppression, import) */}
-        {/* Par exemple un champ recherche, liste filtrée filteredVoters, etc. */}
-        {/* Je ne modifie pas ta UI donc je ne rajoute pas ce code ici, mais tu as tous les handlers prêts */}
-      </main>
-
-      <Footer />
+      <Button variant="ghost" asChild>
+        <Link href="/elections">
+          <ArrowLeft className="mr-2 h-5 w-5" />
+          Retour au tableau de bord
+        </Link>
+      </Button>
     </div>
+
+    <main>
+      <ElectionSettings election={election} onUpdateElection={setElection} />
+
+      {/* Gestion des votants à ajouter ici */}
+    </main>
+  </div>
+
+  {/* Footer hors du container pour occuper toute la largeur */}
+  <Footer />
+</>
+
   );
 };
 

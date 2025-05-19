@@ -18,26 +18,27 @@ export const GET_ALL_ELECTIONS = gql`
 `;
 
 export const GET_ELECTION_BY_ID = gql`
-  query GetElectionById($id: ID!) {
+  query GetElection($id: Int!) {
     election(id: $id) {
       id
       name
       description
       startDate
       endDate
+      status
       createdAt
-      imageUrl
-      imageFile
-      eligibleVoters {
+      createdBy {
         id
         name
         email
-        createdAt
       }
+      eligibleVoters {
+        id  
+        name
+        email}
     }
   }
 `;
-
 // ✍️ Mutations
 
 export const CREATE_ELECTION = gql`
@@ -75,30 +76,39 @@ export const CREATE_ELECTION = gql`
 
 export const UPDATE_ELECTION = gql`
   mutation UpdateElection(
-    $id: Int!
-    $name: String
-    $startDate: DateTime
-    $endDate: DateTime
-    $description: String
+  $id: Int!, 
+  $name: String, 
+  $start_date: DateTime, 
+  $end_date: DateTime, 
+  $description: String, 
+  $status: String,
+  $eligible_voters_ids: [Int],
+  $candidate_ids: [Int]
+) {
+  updateElection(
+    id: $id, 
+    name: $name, 
+    startDate: $start_date, 
+    endDate: $end_date, 
+    description: $description, 
+    status: $status,
+    eligibleVotersIds: $eligible_voters_ids,
+    candidateIds: $candidate_ids
   ) {
-    updateElection(
-      id: $id
-      name: $name
-      startDate: $startDate
-      endDate: $endDate
-      description: $description
-    ) {
-      success
-      message
-      election {
-        id
-        name
-        startDate
-        endDate
-        description
-      }
+    success
+    message
+    election {
+      id
+      name
+      status
+      startDate
+      endDate
+      description
+      eligibleVoters { id name }
+      candidates { id name }
     }
   }
+}
 `;
 
 export const DELETE_ELECTION = gql`

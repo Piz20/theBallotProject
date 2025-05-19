@@ -40,8 +40,7 @@ import {
 // GraphQL related imports for data fetching and mutations.
 import { useMutation, useQuery } from "@apollo/client";
 import { LOGOUT_USER } from "@/lib/mutations/userMutations";
-import { GET_ALL_ELECTIONS } from "@/lib/mutations/electionMutations";
-
+import { GET_ALL_ELECTIONS, GET_ELECTION_BY_ID } from "@/lib/mutations/electionMutations";
 // Custom hooks and state management stores.
 import { useToastStore } from "@/hooks/useToastStore";
 
@@ -65,7 +64,7 @@ const now = new Date();
 
 const mapElectionData = (apiData: any[]): Election[] => {
   return apiData.map((item) => {
-    console.log(item.imageFile);
+    console.log(item.imageFile, item.status);
     return {
       id: item.id,
       name: item.name,
@@ -74,11 +73,7 @@ const mapElectionData = (apiData: any[]): Election[] => {
       endDate: item.endDate,
       createdAt: item.createdAt,
       status:
-        new Date(item.endDate) > now
-          ? new Date(item.startDate) <= now
-            ? "Active"
-            : "Upcoming"
-          : "Completed",
+        item.status,
       imageUrl: item.imageUrl,
       imageFile: item.imageFile,
       eligibleVoters: item.eligibleVoters || 0
@@ -107,6 +102,27 @@ export default function ElectionPage() {
   const ITEMS_PER_PAGE = 6; // Number of items to display per page.
   const totalPages = Math.ceil(filteredElections.length / ITEMS_PER_PAGE);
 
+
+  const {
+    data: dataElection,
+    loading: loadingElection,
+    error: errorElection,
+  } = useQuery(GET_ELECTION_BY_ID, {
+    variables: { id: 10 },
+  });
+
+  useEffect(() => {
+    if (loadingElection) return;
+
+    if (errorElection) {
+      console.error("Erreur lors de la récupération de l'élection :", errorElection.message);
+    } else if (dataElection?.election) {
+      console.log("Élection récupérée :", dataElection.election);
+    } else {
+      console.log("Aucune élection trouvée avec l'ID 2.");
+    }
+  }, [dataElection, loadingElection, errorElection]);
+
   // Processes fetched election data.
   useEffect(() => {
     if (!loading && data && data.allElections) {
@@ -123,7 +139,8 @@ export default function ElectionPage() {
       ? elections.filter(election =>
         election.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         election.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        election.status.toLowerCase().includes(searchTerm.toLowerCase())
+        election.status?.toLowerCase().includes(searchTerm.toLowerCase())
+        
       )
       : elections;
 
@@ -388,15 +405,24 @@ export default function ElectionPage() {
                     </div>
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <span className={`... ${election.status === "Active"
-                          ? "bg-green-100 text-green-800 animate-pulse"
-                          : election.status === "Upcoming"
-                            ? "bg-blue-100 text-blue-800 animate-pulse"
-                            : "bg-gray-100 text-gray-800"
-                          }`}>
-
-                          {election.status}
+                        <span
+                          className={`inline-block text-sm font-semibold px-2 py-0.5 rounded-full
+    ${election.status === 'active'
+                              ? 'bg-green-100 text-green-800 animate-pulse'
+                              : election.status === 'upcoming'
+                                ? 'bg-blue-100 text-blue-800 animate-pulse'
+                                : election.status === 'draft' || !election.status
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : election.status === 'completed'
+                                    ? 'bg-gray-900 text-gray-100'
+                                    : 'bg-gray-100 text-gray-800'
+                            }
+  `}
+                        >
+                          {election.status ?? 'draft'}
                         </span>
+
+
                         <Calendar className="h-4 w-4 text-gray-500" />
                       </div>
                       <h3 className="text-lg font-semibold mb-2">{election.name}</h3>
