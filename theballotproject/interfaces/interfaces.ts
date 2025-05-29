@@ -7,46 +7,41 @@ export interface User {
   matricule?: string | null;
   gender?: "Male" | "Female" | null;
   email: string;
-  dateOfBirth?: string | null;      // ✅ camelCase
-  elections?: any | null;           // JSONField (structure à préciser si possible)
-  profilePicture?: string | null;   // ✅ camelCase
+  dateOfBirth?: string | null;      // camelCase
+  elections?: Election[] | null;    // liste d'élections si possible, pas any
+  profilePicture?: string | null;   // camelCase
   createdAt: string;
 }
 
 // ====================
 // Interfaces Candidat
 // ====================
-// types/Candidate.ts
-
 export interface Candidate {
-  id: number;
-  election: {
-    id: number;
-    name: string;
-  };
-  name: string;
-  bio: string;
-  vote_count: number;
-  profile_picture?: string | null;
-  created_at: string;
+  id?: number;
+  name?: string;
+  bio?: string;
+  voteCount?: number;
+  profilePicture?: string | null;
+  createdAt?: string;
+  election: Election; // objet Election complet obligatoire
 }
-
 
 // ====================
 // Interfaces Élection
 // ====================
 export interface Election {
   id: number;
-  name: string;
-  description: string;
-  startDate: Date;                // ✅ camelCase
-  endDate: Date;
-  createdAt: string;
-  imageFile?: string | null;        // ✅ camelCase
-  imageUrl?: string | null;         // ✅ camelCase
-  eligibleVoters: User[];           // ✅ camelCase
-  candidates?: Candidate[];
-  status: string;
+  name?: string;
+  description?: string;
+  startDate?: string;  // Date en string ISO (cohérent avec API JSON)
+  endDate?: string;    // idem
+  createdAt?: string;
+  createdBy?: string;  // id ou email du créateur
+  imageFile?: string | null;
+  imageUrl?: string | null;
+  eligibleEmails?: string[];
+  status?: string;
+  candidates?: Candidate[];  // Liste des candidats, si exposée par l'API
 }
 
 // ====================

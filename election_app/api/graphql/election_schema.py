@@ -1,41 +1,48 @@
 import graphene
 from graphene_django.types import DjangoObjectType
-from ...models import Election , CustomUser, Candidate
-from .utils import check_authentication  # Importer la fonction de vérification d'authentification
+from ...models import Election, CustomUser, Candidate, EligibleEmail
+from .utils import check_authentication
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from django.core.validators import MaxLengthValidator, URLValidator
+from django.core.validators import MaxLengthValidator, URLValidator, EmailValidator
 from django.core.exceptions import ValidationError
-from django.utils.timezone import now
 from django.utils.text import slugify
-from graphene_file_upload.scalars import Upload
 import base64
 
-# Définir le type GraphQL pour Election
+
 class ElectionType(DjangoObjectType):
+    eligible_emails = graphene.List(graphene.String, name='eligibleEmails')
+    
     class Meta:
         model = Election
-        fields = '__all__'  # Inclure tous les champs du modèle Election
+        fields = '__all__'
 
-
+    def resolve_eligible_emails(self, info):
+        if self.eligible_emails.exists():
+            return list(self.eligible_emails.values_list('email', flat=True))
+        return []
 
 
 class UpdateElection(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
         name = graphene.String()
+        description = graphene.String()
         start_date = graphene.DateTime()
         end_date = graphene.DateTime()
-        description = graphene.String()
         status = graphene.String()
-        eligible_voters_ids = graphene.List(graphene.Int)
-        candidate_ids = graphene.List(graphene.Int)
+        image_file = graphene.String()
+        image_url = graphene.String()
+        eligible_emails = graphene.List(graphene.String)
 
     success = graphene.Boolean()
     message = graphene.String()
     election = graphene.Field(ElectionType)
 
-    def mutate(self, info, id, name=None, start_date=None, end_date=None, description=None, status=None, eligible_voters_ids=None, candidate_ids=None):
+    def mutate(
+        self, info, id, name=None, description=None, start_date=None, end_date=None,
+        status=None, image_file=None, image_url=None, eligible_emails=None
+    ):
         user = check_authentication(info)
         if not user:
             return UpdateElection(success=False, message="Authentification requise.")
@@ -44,30 +51,40 @@ class UpdateElection(graphene.Mutation):
             election = Election.objects.get(id=id)
 
             if name and name != election.name:
-                if Election.objects.filter(name=name).exists():
-                    return UpdateElection(success=False, message="Une élection avec ce nom existe déjà.")
+                if Election.objects.filter(name=name).exclude(id=id).exists():
+                    return UpdateElection(success=False, message="Une autre élection porte déjà ce nom.")
                 election.name = name
 
+            if description:
+                election.description = description
             if start_date:
                 election.start_date = start_date
             if end_date:
                 election.end_date = end_date
-            if description:
-                election.description = description
             if status:
                 election.status = status
 
-            election.save()
+            if image_url and image_file:
+                return UpdateElection(success=False, message="Vous ne pouvez pas soumettre à la fois une URL d'image et un fichier image.")
 
-            # Mise à jour des votants éligibles
-            if eligible_voters_ids is not None:
-                voters = CustomUser.objects.filter(id__in=eligible_voters_ids)
-                election.eligible_voters.set(voters)
+            if image_file:
+                try:
+                    format, imgstr = image_file.split(';base64,')
+                    ext = format.split('/')[-1]
+                    image_data = ContentFile(base64.b64decode(imgstr), name=f"{slugify(election.name)}.{ext}")
+                    image_path = default_storage.save(f"election_images/{image_data.name}", image_data)
+                    election.image_file = image_path
+                    election.image_url = None
+                except Exception as e:
+                    return UpdateElection(success=False, message=f"Erreur lors de l'upload de l'image : {str(e)}")
+            elif image_url:
+                election.image_url = image_url
+                election.image_file = None
 
-            # Mise à jour des candidats
-            if candidate_ids is not None:
-                candidates = Candidate.objects.filter(id__in=candidate_ids)
-                election.candidates.set(candidates)
+            if eligible_emails is not None:
+                election.eligible_emails.all().delete()
+                new_emails = [EligibleEmail(election=election, email=email) for email in set(eligible_emails)]
+                EligibleEmail.objects.bulk_create(new_emails)
 
             election.save()
 
@@ -80,71 +97,65 @@ class UpdateElection(graphene.Mutation):
 
 
 
-# Mutation pour créer une élection
 class CreateElection(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         description = graphene.String(required=True)
         start_date = graphene.DateTime(required=False)
         end_date = graphene.DateTime(required=False)
-        image_url = graphene.String(required=False)  # URL de l'image
-        image_file = graphene.String(required=False)  # Image en base64 (au lieu de Upload)
+        image_url = graphene.String(required=False)
+        image_file = graphene.String(required=False)
+        eligible_emails = graphene.List(graphene.String)
 
     success = graphene.Boolean()
     message = graphene.String()
-    election = graphene.Field(ElectionType)  # Type GraphQL pour retourner l'élection
+    election = graphene.Field(ElectionType)
 
-    def mutate(self, info, name, description, start_date=None, end_date=None, image_url=None, image_file=None):
-        # Vérifier l'authentification de l'utilisateur
+    def mutate(self, info, name, description, start_date=None, end_date=None, image_url=None, image_file=None, eligible_emails=None):
         user = check_authentication(info)
         if not user:
             return CreateElection(success=False, message="Authentification requise.")
-        
-        # Vérifier si une élection avec ce nom existe déjà
+
         if Election.objects.filter(name=name).exists():
             return CreateElection(success=False, message="Une élection avec ce nom existe déjà.")
 
-        # Vérifier que l'utilisateur soumet soit image_url soit image_file, mais pas les deux
         if image_url and image_file:
             return CreateElection(success=False, message="Vous ne pouvez pas soumettre à la fois une URL d'image et un fichier image.")
-        
-        # Variable pour stocker le chemin de l'image
+
         image_path = None
 
-        # Si un fichier image en base64 est fourni, gérer l'upload
         if image_file:
             try:
-                # Décoder l'image base64
-                format, imgstr = image_file.split(';base64,')  # Récupérer la partie après ";base64,"
-                ext = format.split('/')[-1]  # Récupérer l'extension de l'image (ex. 'png', 'jpeg')
+                format, imgstr = image_file.split(';base64,')
+                ext = format.split('/')[-1]
                 image_data = ContentFile(base64.b64decode(imgstr), name=f"{slugify(name)}.{ext}")
-                
-                # Sauvegarder l'image sur le serveur avec un nom unique basé sur le nom de l'élection
                 image_path = default_storage.save(f"election_images/{image_data.name}", image_data)
             except Exception as e:
                 return CreateElection(success=False, message=f"Erreur lors de l'upload de l'image : {str(e)}")
-        
-        # Si un image_url est fourni, il sera utilisé tel quel
+
         if not image_url and not image_file:
             return CreateElection(success=False, message="Vous devez fournir une URL ou un fichier image.")
 
         try:
-            # Créer l'élection avec les informations fournies
             election = Election.objects.create(
                 name=name,
                 start_date=start_date,
                 end_date=end_date,
                 description=description,
-                image_url=image_url if image_url else None,  # Utilise image_url s'il est fourni
-                image_file=image_path if image_file else None,  # Utilise image_file s'il est téléchargé
-                created_by=user  # Assigner l'utilisateur authentifié à created_by
+                image_url=image_url if image_url else None,
+                image_file=image_path if image_file else None,
+                created_by=user
             )
+
+            if eligible_emails:
+                new_emails = [EligibleEmail(election=election, email=email) for email in set(eligible_emails)]
+                EligibleEmail.objects.bulk_create(new_emails)
+
             return CreateElection(success=True, message="Élection créée avec succès!", election=election)
         except Exception as e:
             return CreateElection(success=False, message=f"Erreur lors de la création de l'élection : {str(e)}")
 
 
-# Mutation pour supprimer une élection
 class DeleteElection(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
@@ -153,7 +164,7 @@ class DeleteElection(graphene.Mutation):
     message = graphene.String()
 
     def mutate(self, info, id):
-        user = check_authentication(info)  # Vérifier l'authentification
+        user = check_authentication(info)
         if not user:
             return DeleteElection(success=False, message="Authentification requise.")
 
@@ -167,19 +178,18 @@ class DeleteElection(graphene.Mutation):
             return DeleteElection(success=False, message=str(e))
 
 
-# Requête pour lister et obtenir une élection
 class Query(graphene.ObjectType):
     all_elections = graphene.List(ElectionType)
     election = graphene.Field(ElectionType, id=graphene.Int(required=True))
 
     def resolve_all_elections(self, info):
-        user = check_authentication(info)  # Vérifier l'authentification
+        user = check_authentication(info)
         if not user:
             return None
         return Election.objects.all()
 
     def resolve_election(self, info, id):
-        user = check_authentication(info)  # Vérifier l'authentification
+        user = check_authentication(info)
         if not user:
             return None
         try:
@@ -188,12 +198,10 @@ class Query(graphene.ObjectType):
             return None
 
 
-# Mutations groupées pour Election
 class Mutation(graphene.ObjectType):
     create_election = CreateElection.Field()
     update_election = UpdateElection.Field()
     delete_election = DeleteElection.Field()
 
 
-# Schéma final pour les mutations et requêtes d'élections
 schema = graphene.Schema(query=Query, mutation=Mutation)

@@ -1,230 +1,109 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { gql, useQuery } from '@apollo/client';
-import { Vote, ArrowLeft } from 'lucide-react';
-import ElectionSettings from '../../../../components/election/election-settings';
-import { Election, User } from '../../../../interfaces/interfaces';
-import Footer from '@/components/ui/footer';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { GET_ELECTION_BY_ID } from '@/lib/mutations/electionMutations';
-import Loader from '@/components/ui/loader';
+import React, { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useQuery, useMutation } from "@apollo/client";
+import { ArrowLeft } from "lucide-react";
+import ElectionForm from "@/components/election/election-form";
+import LoadingState from "@/components/election/loading-state";
+import ErrorState from "@/components/election/error-state";
+import { Election } from "@/interfaces/interfaces";
+import { GET_ELECTION_BY_ID, UPDATE_ELECTION } from "@/lib/mutations/electionMutations";
 
-const ElectionSettingsPage: React.FC = () => {
+const ElectionEditPage: React.FC = () => {
   const { id } = useParams();
-  // Requête GraphQL pour récupérer l'élection
-  const idValue = typeof id === 'string' ? parseInt(id, 10) : undefined;
+  const router = useRouter();
+
+  const idValue = typeof id === "string" ? parseInt(id, 10) : undefined;
 
   const { data, loading, error } = useQuery(GET_ELECTION_BY_ID, {
     variables: { id: idValue },
     skip: !idValue || isNaN(idValue),
+    onError: (err) => {
+      console.error("Erreur lors du fetch de l'élection:", err);
+    },
   });
 
-  // État local de l'élection
-  const [election, setElection] = useState<Election | null>(null);
+  const [updateElection] = useMutation(UPDATE_ELECTION);
+  const [saving, setSaving] = useState(false);
 
-  // États pour la gestion des votants
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newVoter, setNewVoter] = useState<{ name: string; email: string }>({ name: '', email: '' });
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<User>({
-    id: 0,
-    name: '',
-    email: '',
-    createdAt: new Date().toISOString(),
-  });
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [bulkEmails, setBulkEmails] = useState('');
+  const election: Election | null = data?.election ?? null;
 
-  // Dès que les données sont chargées, on initialise l'état election
-  useEffect(() => {
-    if (data?.election) {
-      setElection(data.election);
-    }
-  }, [data]);
+  const formatDateToISO = (value: string | undefined): string | undefined => {
+    if (!value) return undefined;
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? undefined : date.toISOString();
+  };
 
-  if (loading) return <Loader />;
+  const handleSave = async (updated: Partial<Election>) => {
+    if (!election) return;
 
-  if (error) return <p>Erreur : {error.message}</p>;
-  if (!election) return <p>Élection non trouvée.</p>;
-  // Validation email simple
-  const validateEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    try {
+      setSaving(true);
 
-  // Ajout d'un nouvel électeur
-  const handleAddVoter = () => {
-    const newErrors: typeof errors = {};
-    if (!newVoter.name.trim()) newErrors.name = 'Le nom est requis';
-    if (!newVoter.email.trim()) {
-      newErrors.email = "L'email est requis";
-    } else if (!validateEmail(newVoter.email)) {
-      newErrors.email = "Format d'email invalide";
-    } else if (election.eligibleVoters.some((v) => v.email === newVoter.email.trim())) {
-      newErrors.email = "Cet email est déjà dans la liste";
-    }
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      const voter: User = {
-        id: Date.now(),
-        name: newVoter.name.trim(),
-        email: newVoter.email.trim(),
-        createdAt: new Date().toISOString(),
+      const variables: any = {
+        id: Number(election.id),
+        name: updated.name ?? election.name,
+        description: updated.description ?? election.description,
+        startDate: formatDateToISO(updated.startDate ?? election.startDate),
+        endDate: formatDateToISO(updated.endDate ?? election.endDate),
+        status: updated.status ?? election.status,
+        eligibleEmails: updated.eligibleEmails ?? election.eligibleEmails,
       };
 
-      setElection({
-        ...election,
-        eligibleVoters: [...election.eligibleVoters, voter],
-      });
-      setNewVoter({ name: '', email: '' });
-    }
-  };
-
-  // Suppression d'un électeur
-  const handleRemoveVoter = (id: number) => {
-    setElection({
-      ...election,
-      eligibleVoters: election.eligibleVoters.filter((v) => v.id !== id),
-    });
-  };
-
-  // Commencer l'édition d'un électeur
-  const startEditing = (voter: User) => {
-    setEditingId(voter.id);
-    setEditForm({ ...voter });
-    setErrors({});
-  };
-
-  // Annuler l'édition
-  const cancelEditing = () => {
-    setEditingId(null);
-    setErrors({});
-  };
-
-  // Sauvegarder l'édition
-  const saveEdit = () => {
-    const newErrors: typeof errors = {};
-    if (!editForm.name?.trim()) newErrors.name = 'Le nom est requis';
-    if (!editForm.email.trim()) {
-      newErrors.email = "L'email est requis";
-    } else if (!validateEmail(editForm.email)) {
-      newErrors.email = "Format d'email invalide";
-    } else if (
-      election.eligibleVoters.some(
-        (v) => v.email === editForm.email.trim() && v.id !== editForm.id
-      )
-    ) {
-      newErrors.email = "Cet email est déjà dans la liste";
-    }
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      setElection({
-        ...election,
-        eligibleVoters: election.eligibleVoters.map((v) =>
-          v.id === editingId ? { ...editForm, email: editForm.email.trim() } : v
-        ),
-      });
-      setEditingId(null);
-    }
-  };
-
-  // Import massif d'emails via textarea
-  const handleBulkImport = () => {
-    const emailList = bulkEmails
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
-    const validEmails: { email: string; name: string }[] = [];
-    const invalidEmails: string[] = [];
-
-    emailList.forEach((entry) => {
-      const emailRegex = /<([^>]+)>/;
-      const nameMatch = entry.match(emailRegex);
-      let email, name;
-
-      if (nameMatch) {
-        email = nameMatch[1];
-        name = entry.split('<')[0].trim();
-      } else {
-        email = entry;
-        name = email.split('@')[0];
+      if (updated.imageFile && (updated.imageFile as any) instanceof File) {
+        const base64 = await convertToBase64(updated.imageFile as unknown as File);
+        variables.imageFile = base64;
+        variables.imageUrl = null;
+      } else if (updated.imageUrl) {
+        variables.imageUrl = updated.imageUrl;
+        variables.imageFile = null;
       }
 
-      if (validateEmail(email) && !election.eligibleVoters.some((v) => v.email === email)) {
-        validEmails.push({ email, name });
-      } else {
-        invalidEmails.push(email);
-      }
-    });
+      await updateElection({ variables });
 
-    if (validEmails.length > 0) {
-      const newVoters: User[] = validEmails.map(({ email, name }, index) => ({
-        id: Date.now() + index,
-        name,
-        email,
-        createdAt: new Date().toISOString(),
-      }));
-
-      setElection({
-        ...election,
-        eligibleVoters: [...election.eligibleVoters, ...newVoters],
-      });
+      alert("Élection mise à jour avec succès !");
+    } catch (err) {
+      console.error("Erreur de mise à jour :", err);
+    } finally {
+      setSaving(false);
     }
-
-    if (invalidEmails.length > 0) {
-      alert(`${validEmails.length} électeurs ajoutés. ${invalidEmails.length} emails invalides ou déjà présents.`);
-    } else {
-      alert(`${validEmails.length} électeurs ajoutés avec succès.`);
-    }
-
-    setIsImportModalOpen(false);
-    setBulkEmails('');
   };
 
-  // Filtrer la liste des électeurs selon la recherche
-  const filteredVoters = election.eligibleVoters.filter(
-    (voter) =>
-      voter.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      voter.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState error={`Erreur de chargement : ${error.message}`} />;
+  if (!election) return <ErrorState error="Aucune élection trouvée avec cet identifiant." />;
 
   return (
-    <>
-          <title>TheBallotProject - ElectionSettings</title>
-
-  <div className="container mx-auto px-4 py-8">
-    {/* Header */}
-    <div className="flex items-center justify-between mb-8">
-      <div className="flex items-center gap-2">
-        <Vote className="h-8 w-8 text-primary heartbeat" />
-        <h1 className="text-3xl font-bold">TheBallotProject</h1>
+    <div className="w-full max-w-3xl mx-auto">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
+          <h1 className="text-2xl font-bold">Modifier l'élection</h1>
+          <p className="opacity-90 mt-1">Personnalisez les détails de votre élection</p>
+        </div>
+        <div className="p-6">
+          <ElectionForm election={election} onSave={handleSave} isSaving={saving} />
+        </div>
       </div>
-      <Button variant="ghost" asChild>
-        <Link href="/elections">
-          <ArrowLeft className="mr-2 h-5 w-5" />
-          Retour au tableau de bord
-        </Link>
-      </Button>
+      <div className="flex justify-between">
+        <button
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 rounded-lg hover:bg-gray-100"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft size={18} />
+          <span>Retour</span>
+        </button>
+      </div>
     </div>
-
-    <main>
-      <ElectionSettings election={election} onUpdateElection={setElection} />
-
-      {/* Gestion des votants à ajouter ici */}
-    </main>
-  </div>
-
-  {/* Footer hors du container pour occuper toute la largeur */}
-  <Footer />
-</>
-
   );
 };
 
-export default ElectionSettingsPage;
+export default ElectionEditPage;
+
+const convertToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+  });

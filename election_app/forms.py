@@ -39,7 +39,7 @@ class ProfilePictureForm(forms.ModelForm):
 class ElectionForm(forms.ModelForm):
     class Meta:
         model = Election
-        fields = ['name', 'description', 'start_date', 'end_date', 'eligible_voters']  
+        fields = ['name', 'description', 'start_date', 'end_date']  
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),

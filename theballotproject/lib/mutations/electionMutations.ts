@@ -13,12 +13,13 @@ export const GET_ALL_ELECTIONS = gql`
       createdAt
       imageUrl
       imageFile
+      eligibleEmails
     }
   }
 `;
 
 export const GET_ELECTION_BY_ID = gql`
-  query GetElection($id: Int!) {
+   query($id: Int!) {
     election(id: $id) {
       id
       name
@@ -27,18 +28,14 @@ export const GET_ELECTION_BY_ID = gql`
       endDate
       status
       createdAt
-      createdBy {
-        id
-        name
-        email
+      imageUrl
+      imageFile
+      eligibleEmails
+    
+}
       }
-      eligibleVoters {
-        id  
-        name
-        email}
-    }
-  }
 `;
+
 // ✍️ Mutations
 
 export const CREATE_ELECTION = gql`
@@ -49,6 +46,7 @@ export const CREATE_ELECTION = gql`
     $endDate: DateTime
     $imageUrl: String
     $imageFile: String
+    $eligibleEmails: [String]
   ) {
     createElection(
       name: $name
@@ -57,6 +55,7 @@ export const CREATE_ELECTION = gql`
       endDate: $endDate
       imageUrl: $imageUrl
       imageFile: $imageFile
+      eligibleEmails: $eligibleEmails
     ) {
       success
       message
@@ -67,7 +66,7 @@ export const CREATE_ELECTION = gql`
         startDate
         endDate
         imageUrl
-        
+        eligibleEmails
       }
     }
   }
@@ -76,40 +75,45 @@ export const CREATE_ELECTION = gql`
 
 export const UPDATE_ELECTION = gql`
   mutation UpdateElection(
-  $id: Int!, 
-  $name: String, 
-  $start_date: DateTime, 
-  $end_date: DateTime, 
-  $description: String, 
-  $status: String,
-  $eligible_voters_ids: [Int],
-  $candidate_ids: [Int]
-) {
-  updateElection(
-    id: $id, 
-    name: $name, 
-    startDate: $start_date, 
-    endDate: $end_date, 
-    description: $description, 
-    status: $status,
-    eligibleVotersIds: $eligible_voters_ids,
-    candidateIds: $candidate_ids
+    $id: Int!
+    $name: String
+    $description: String
+    $startDate: DateTime
+    $endDate: DateTime
+    $status: String
+    $eligibleEmails: [String]
+    $imageFile: String
+    $imageUrl: String
   ) {
-    success
-    message
-    election {
-      id
-      name
-      status
-      startDate
-      endDate
-      description
-      eligibleVoters { id name }
-      candidates { id name }
+    updateElection(
+      id: $id
+      name: $name
+      description: $description
+      startDate: $startDate
+      endDate: $endDate
+      status: $status
+      eligibleEmails: $eligibleEmails
+      imageFile: $imageFile
+      imageUrl: $imageUrl
+    ) {
+      success
+      message
+      election {
+        id
+        name
+        description
+        startDate
+        endDate
+        status
+        eligibleEmails
+        imageUrl
+      }
     }
   }
-}
 `;
+
+
+
 
 export const DELETE_ELECTION = gql`
   mutation DeleteElection($id: Int!) {

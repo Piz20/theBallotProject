@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxLengthValidator, URLValidator
+from django.core.validators import MaxLengthValidator, URLValidator, EmailValidator
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -39,7 +39,6 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True, null=False, blank=False)
     date_of_birth = models.DateField(null=True, blank=True)
 
-    # Remplacement du champ JSON par une vraie relation ManyToMany vers Election
     elections = models.ManyToManyField(
         'Election',
         related_name='participants',
@@ -49,7 +48,6 @@ class CustomUser(AbstractUser):
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now=True)
 
-    # Supprimer le champ username
     username = None
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -75,11 +73,7 @@ class Election(models.Model):
     start_date = models.DateTimeField(validators=[validate_future_date], null=True, blank=True)
     end_date = models.DateTimeField(validators=[validate_future_date], null=True, blank=True)
 
-    eligible_voters = models.ManyToManyField(
-        CustomUser,
-        related_name='eligible_elections',
-        blank=True
-    )
+
     created_at = models.DateTimeField(auto_now=True)
 
     image_file = models.ImageField(
@@ -126,6 +120,8 @@ class Election(models.Model):
             raise ValidationError("Ne fournissez pas à la fois une image locale et une URL d'image.")
 
     def save(self, *args, **kwargs):
+        if self.status:
+            self.status = self.status.lower()
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -136,14 +132,25 @@ class Election(models.Model):
 
     def __str__(self):
         return self.name
+    
 
+class EligibleEmail(models.Model):
+    election = models.ForeignKey(Election, related_name='eligible_emails', on_delete=models.CASCADE)
+    email = models.EmailField(validators=[EmailValidator()], db_index=True)
 
+    class Meta:
+        unique_together = ('election', 'email')  # Pour éviter les doublons
+
+    def __str__(self):
+        return self.email
+    
+    
 class Candidate(models.Model):
     id = models.AutoField(primary_key=True)
     election = models.ForeignKey(
         Election,
         on_delete=models.CASCADE,
-        related_name='candidates'
+        related_name='candidates'  # Liste des candidats pour cette élection
     )
     name = models.CharField(max_length=255, unique=True)
     bio = models.TextField(max_length=1000, null=False, blank=False)

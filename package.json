@@ -14,9 +14,11 @@
   "dependencies": {
     "@apollo/client": "^3.13.8",
     "firebase": "^11.0.2",
-    "graphql": "^16.11.0"
+    "graphql": "^16.11.0",
+    "react-datepicker": "^8.3.0"
   },
   "devDependencies": {
+    "@types/react-datepicker": "^6.2.0",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17"

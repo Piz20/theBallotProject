@@ -40,7 +40,7 @@ import {
 // GraphQL related imports for data fetching and mutations.
 import { useMutation, useQuery } from "@apollo/client";
 import { LOGOUT_USER } from "@/lib/mutations/userMutations";
-import { GET_ALL_ELECTIONS, GET_ELECTION_BY_ID } from "@/lib/mutations/electionMutations";
+import { GET_ALL_ELECTIONS} from "@/lib/mutations/electionMutations";
 // Custom hooks and state management stores.
 import { useToastStore } from "@/hooks/useToastStore";
 
@@ -103,25 +103,7 @@ export default function ElectionPage() {
   const totalPages = Math.ceil(filteredElections.length / ITEMS_PER_PAGE);
 
 
-  const {
-    data: dataElection,
-    loading: loadingElection,
-    error: errorElection,
-  } = useQuery(GET_ELECTION_BY_ID, {
-    variables: { id: 10 },
-  });
-
-  useEffect(() => {
-    if (loadingElection) return;
-
-    if (errorElection) {
-      console.error("Erreur lors de la récupération de l'élection :", errorElection.message);
-    } else if (dataElection?.election) {
-      console.log("Élection récupérée :", dataElection.election);
-    } else {
-      console.log("Aucune élection trouvée avec l'ID 2.");
-    }
-  }, [dataElection, loadingElection, errorElection]);
+  
 
   // Processes fetched election data.
   useEffect(() => {
@@ -137,8 +119,8 @@ export default function ElectionPage() {
   useEffect(() => {
     const filtered = searchTerm
       ? elections.filter(election =>
-        election.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        election.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        election.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (election.description ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         election.status?.toLowerCase().includes(searchTerm.toLowerCase())
         
       )
@@ -431,7 +413,7 @@ export default function ElectionPage() {
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-gray-500" />
                           <span className="text-sm text-gray-500">
-                            {Array.isArray(election.eligibleVoters) ? election.eligibleVoters.length : 0} eligible voters
+                            {Array.isArray(election.eligibleEmails) ? election.eligibleEmails.length : 0} eligible voters
                           </span>
                         </div>
                         <button className="text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
@@ -441,8 +423,8 @@ export default function ElectionPage() {
                       </div>
                       <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
                         <div className="flex justify-between">
-                          <span>Start: {new Date(election.startDate).toLocaleDateString()}</span>
-                          <span>End: {new Date(election.endDate).toLocaleDateString()}</span>
+                          <span>Start: {new Date(election.startDate ?? "").toLocaleDateString()}</span>
+                          <span>End: {new Date(election.endDate ?? "").toLocaleDateString()}</span>
                         </div>
                       </div>
                     </div>
