@@ -3,13 +3,15 @@
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Vote } from "lucide-react";
 import ElectionForm from "@/components/election/election-form";
 import LoadingState from "@/components/election/loading-state";
 import ErrorState from "@/components/election/error-state";
 import { Election } from "@/interfaces/interfaces";
 import { GET_ELECTION_BY_ID, UPDATE_ELECTION } from "@/lib/mutations/electionMutations";
-
+import Footer from "@/components/ui/footer";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 const ElectionEditPage: React.FC = () => {
   const { id } = useParams();
   const router = useRouter();
@@ -75,26 +77,38 @@ const ElectionEditPage: React.FC = () => {
   if (!election) return <ErrorState error="Aucune élection trouvée avec cet identifiant." />;
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
-          <h1 className="text-2xl font-bold">Modifier l'élection</h1>
-          <p className="opacity-90 mt-1">Personnalisez les détails de votre élection</p>
-        </div>
-        <div className="p-6">
-          <ElectionForm election={election} onSave={handleSave} isSaving={saving} />
-        </div>
+    <>
+  {/* Header avec marges latérales */}
+  <div className="flex items-center justify-between mb-8 mx-auto px-4 py-8">
+    <div className="flex items-center gap-2">
+      <Vote className="h-8 w-8 text-primary heartbeat" />
+      <h1 className="text-3xl font-bold">TheBallotProject</h1>
+    </div>
+    <Button variant="ghost" asChild>
+      <Link href="/elections">
+        <ArrowLeft className="mr-2 h-5 w-5" />
+        Retour au tableau de bord
+      </Link>
+    </Button>
+  </div>
+
+  {/* Contenu principal centré */}
+  <div className="w-full max-w-3xl mx-auto">
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
+        <h1 className="text-2xl font-bold">Modifier l'élection</h1>
+        <p className="opacity-90 mt-1">Personnalisez les détails de votre élection</p>
       </div>
-      <div className="flex justify-between">
-        <button
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 rounded-lg hover:bg-gray-100"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft size={18} />
-          <span>Retour</span>
-        </button>
+      <div className="p-6">
+        <ElectionForm election={election} onSave={handleSave} isSaving={saving} />
       </div>
     </div>
+  </div>
+
+  {/* Footer pleine largeur sans marges */}
+  <Footer />
+</>
+
   );
 };
 
