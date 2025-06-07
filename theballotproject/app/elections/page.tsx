@@ -40,7 +40,7 @@ import {
 // GraphQL related imports for data fetching and mutations.
 import { useMutation, useQuery } from "@apollo/client";
 import { LOGOUT_USER } from "@/lib/mutations/userMutations";
-import { GET_ALL_ELECTIONS} from "@/lib/mutations/electionMutations";
+import { GET_ALL_ELECTIONS } from "@/lib/mutations/electionMutations";
 // Custom hooks and state management stores.
 import { useToastStore } from "@/hooks/useToastStore";
 
@@ -103,7 +103,7 @@ export default function ElectionPage() {
   const totalPages = Math.ceil(filteredElections.length / ITEMS_PER_PAGE);
 
 
-  
+
 
   // Processes fetched election data.
   useEffect(() => {
@@ -122,7 +122,7 @@ export default function ElectionPage() {
         election.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (election.description ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         election.status?.toLowerCase().includes(searchTerm.toLowerCase())
-        
+
       )
       : elections;
 
@@ -184,6 +184,12 @@ export default function ElectionPage() {
       setIsLoading(false);
     }
   };
+
+  function truncateText(text: string, maxLength: number) {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + "...";
+  }
+
 
   // Returns the JSX for rendering the Election Page UI.
   return (
@@ -407,8 +413,8 @@ export default function ElectionPage() {
 
                         <Calendar className="h-4 w-4 text-gray-500" />
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">{election.name}</h3>
-                      <p className="text-sm text-gray-600 mb-4">{election.description}</p>
+                      <h3 className="text-lg font-semibold mb-2">{truncateText(election.name ?? "",35)}</h3>
+                      <p className="text-sm text-gray-600 mb-4">{truncateText(election.description ?? "", 100)}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-gray-500" />
