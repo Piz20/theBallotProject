@@ -18,9 +18,23 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   const [urlInput, setUrlInput] = useState(imageUrl || '');
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const currentImage = imageFile || imageUrl;
 
+  const BASE_MEDIA_URL = "http://localhost:8000/media/";
+
+  const resolveImage = () => {
+    if (imageFile) {
+      if (imageFile.startsWith("data:")) {
+        // base64 (upload local)
+        return imageFile;
+      } else {
+        // image sauvegardée sur le serveur
+        return `${BASE_MEDIA_URL}${imageFile}`;
+      }
+    }
+    return imageUrl || null;
+  };
+
+  const currentImage = resolveImage();
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUrlInput(e.target.value);
   };
@@ -48,7 +62,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
     } else if (e.type === 'dragleave') {
@@ -60,7 +74,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     const files = e.dataTransfer.files;
     if (files && files[0]) {
       const file = files[0];
@@ -84,14 +98,14 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
 
   return (
     <div className="space-y-4">
-    
-      
+
+
       {/* Image preview */}
       {currentImage && (
         <div className="relative mb-4 overflow-hidden rounded-lg">
-          <img 
-            src={currentImage} 
-            alt="Aperçu de l'image" 
+          <img
+            src={currentImage}
+            alt="Aperçu de l'image"
             className="w-full h-[200px] object-cover"
           />
           <button
@@ -104,16 +118,15 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
           </button>
         </div>
       )}
-      
+
       {/* Tabs */}
       <div className="flex border-b border-gray-200">
         <button
           type="button"
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'file'
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'file'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
           onClick={() => setActiveTab('file')}
         >
           <span className="flex items-center gap-1">
@@ -123,11 +136,10 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
         </button>
         <button
           type="button"
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'url'
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'url'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
           onClick={() => setActiveTab('url')}
         >
           <span className="flex items-center gap-1">
@@ -136,7 +148,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
           </span>
         </button>
       </div>
-      
+
       {/* File upload area */}
       {activeTab === 'file' && (
         <div
@@ -168,7 +180,7 @@ const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
           />
         </div>
       )}
-      
+
       {/* URL input */}
       {activeTab === 'url' && (
         <div className="flex gap-2">

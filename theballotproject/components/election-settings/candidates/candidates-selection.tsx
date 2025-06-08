@@ -51,60 +51,49 @@ export default function CandidatesSection({ electionId }: CandidatesSectionProps
     }
   };
 
-  const convertToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-    });
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!electionId) return;
+  e.preventDefault();
+  if (!electionId) return;
 
-    let imageFileBase64 = null;
-    if (formData.imageFile && typeof formData.imageFile !== "string") {
-      imageFileBase64 = await convertToBase64(formData.imageFile as unknown as File);
+  try {
+    if (editingCandidate) {
+      console.log(formData.imageUrl, formData.imageFile);
+      await updateCandidate({
+        variables: {
+          id: parseInt(editingCandidate.id),
+          name: formData.name,
+          description: formData.description,
+          imageUrl: formData.imageUrl || null,
+          imageFile: formData.imageFile || null,
+          electionId,
+        },
+      });
+      alert('Candidate updated successfully!');
+    } else {
+      await createCandidate({
+        variables: {
+          name: formData.name,
+          description: formData.description,
+          electionId,
+          imageUrl: formData.imageUrl || null,
+          imageFile: formData.imageFile || null,
+        },
+      });
+      alert('Candidate created successfully!');
     }
 
-    try {
-      if (editingCandidate) {
-        await updateCandidate({
-          variables: {
-            id: parseInt(editingCandidate.id),
-            name: formData.name,
-            description: formData.description,
-            imageUrl: formData.imageUrl,
-            imageFile: imageFileBase64,
-            electionId,
-          },
-        });
-        alert('Candidate updated successfully!');
-      } else {
-        await createCandidate({
-          variables: {
-            name: formData.name,
-            description: formData.description,
-            electionId,
-            imageUrl: formData.imageUrl,
-            imageFile: imageFileBase64,
-          },
-        });
-        alert('Candidate created successfully!');
-        console.log(candidates.variables);
-      }
+    await refetch();
+    setEditingCandidate(null);
+    setFormData({ name: '', description: '', imageFile: '', imageUrl: '' });
+    setShowAddForm(false);
+  } catch (err) {
+    console.error('Error saving candidate:', err);
+    alert('Error saving candidate');
+  }
+};
 
-      await refetch();
-      setEditingCandidate(null);
-      setFormData({ name: '', description: '', imageFile: '', imageUrl: '' });
-      setShowAddForm(false);
-    } catch (err) {
-      console.error('Error saving candidate:', err);
-      alert('Error saving candidate');
-    }
-  };
 
   const handleEdit = (candidate: any) => {
     setEditingCandidate(candidate);

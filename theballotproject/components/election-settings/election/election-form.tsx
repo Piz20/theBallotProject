@@ -81,23 +81,12 @@ const ElectionForm: React.FC<ElectionFormProps> = ({ electionId, onSave }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const convertToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-    });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm() || !formState) return;
 
     try {
-      let imageFileBase64 = null;
-      if (formState.imageFile && typeof formState.imageFile !== "string") {
-        imageFileBase64 = await convertToBase64(formState.imageFile as unknown as File);
-      }
+      
 
       await updateElection({
         variables: {
@@ -109,7 +98,7 @@ const ElectionForm: React.FC<ElectionFormProps> = ({ electionId, onSave }) => {
           status: formState.status,
           eligibleEmails: formState.eligibleEmails,
           imageUrl: formState.imageUrl,
-          imageFile: imageFileBase64,
+          imageFile : formState.imageFile,
         },
       });
 
