@@ -7,9 +7,10 @@ export const GET_ALL_CANDIDATES = gql`
     allCandidates {
       id
       name
-      bio
+      description
       voteCount
-      profilePicture
+      imageUrl
+      imageFile
       createdAt
       election {
         id
@@ -24,9 +25,10 @@ export const GET_CANDIDATE_BY_ID = gql`
     candidate(id: $id) {
       id
       name
-      bio
+      description
       voteCount
-      profilePicture
+      imageUrl
+      imageFile
       createdAt
       election {
         id
@@ -41,24 +43,27 @@ export const GET_CANDIDATE_BY_ID = gql`
 export const CREATE_CANDIDATE = gql`
   mutation CreateCandidate(
     $name: String!
-    $bio: String!
+    $description: String!
     $electionId: Int!
-    $profilePicture: String
+    $imageFile: String
+    $imageUrl: String
   ) {
     createCandidate(
       name: $name
-      bio: $bio
+      description: $description
       electionId: $electionId
-      profilePicture: $profilePicture
+      imageFile: $imageFile
+      imageUrl: $imageUrl
     ) {
       success
       message
       candidate {
         id
         name
-        bio
+        description
         voteCount
-        profilePicture
+        imageFile
+        imageUrl
         createdAt
         election {
           id
@@ -68,30 +73,32 @@ export const CREATE_CANDIDATE = gql`
     }
   }
 `;
+
 
 export const UPDATE_CANDIDATE = gql`
   mutation UpdateCandidate(
     $id: Int!
     $name: String
-    $bio: String
-    $electionId: Int
-    $profilePicture: String
+    $description: String
+    $imageFile: String
+    $imageUrl: String
   ) {
     updateCandidate(
       id: $id
       name: $name
-      bio: $bio
-      electionId: $electionId
-      profilePicture: $profilePicture
+      description: $description
+      imageFile: $imageFile
+      imageUrl: $imageUrl
     ) {
       success
       message
       candidate {
         id
         name
-        bio
+        description
+        imageFile
+        imageUrl
         voteCount
-        profilePicture
         createdAt
         election {
           id
@@ -101,7 +108,6 @@ export const UPDATE_CANDIDATE = gql`
     }
   }
 `;
-
 export const DELETE_CANDIDATE = gql`
   mutation DeleteCandidate($id: Int!) {
     deleteCandidate(id: $id) {

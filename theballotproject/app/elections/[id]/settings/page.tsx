@@ -21,6 +21,8 @@ const ElectionEditPage: React.FC = () => {
 
   return (
     <>
+      <title>Edit Election - TheBallotProject</title>
+
       <div className="flex items-center justify-between mb-8 mx-auto px-4 py-8">
         <div className="flex items-center gap-2">
           <Vote className="h-8 w-8 text-primary heartbeat" />
@@ -60,8 +62,8 @@ const ElectionEditPage: React.FC = () => {
           </div>
         )}
 
-        {activeTab === "candidates" && (
-          <CandidatesSection electionId={idValue ? idValue.toString() : undefined} />
+        {activeTab === "candidates" && typeof idValue === "number" && (
+          <CandidatesSection electionId={idValue} />
         )}
       </div>
 

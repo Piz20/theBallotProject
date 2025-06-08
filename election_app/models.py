@@ -148,14 +148,26 @@ class EligibleEmail(models.Model):
 class Candidate(models.Model):
     id = models.AutoField(primary_key=True)
     election = models.ForeignKey(
-        Election,
+        'Election',
         on_delete=models.CASCADE,
         related_name='candidates'  # Liste des candidats pour cette élection
     )
     name = models.CharField(max_length=255, unique=True)
-    bio = models.TextField(max_length=1000, null=False, blank=False)
+    description = models.TextField(max_length=1000, null=False, blank=False)  # anciennement bio
     vote_count = models.IntegerField(default=0)
-    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    image_file = models.ImageField(
+        upload_to='candidate_images/',
+        null=True,
+        blank=True,
+        help_text="Téléchargez un fichier image."
+    )
+    image_url = models.URLField(
+        max_length=500,
+        validators=[URLValidator()],
+        null=True,
+        blank=True,
+        help_text="Ou fournissez une URL d’image."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

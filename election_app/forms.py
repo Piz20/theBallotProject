@@ -83,11 +83,12 @@ class ElectionForm(forms.ModelForm):
 class CandidateForm(forms.ModelForm):
     class Meta:
         model = Candidate
-        fields = ['name', 'bio', 'profile_picture']
+        fields = ['name', 'description', 'image_file', 'image_url']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'image_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'image_url': forms.URLInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):

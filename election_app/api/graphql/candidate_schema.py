@@ -1,91 +1,118 @@
 import graphene
 from graphene_django.types import DjangoObjectType
-from django.db import models
 from ...models import Candidate, Election
-from .utils import check_authentication  # Importer la fonction de vérification d'authentification
+from .utils import check_authentication
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.utils.text import slugify
+import base64
 
-# Type GraphQL pour Candidate
+
 class CandidateType(DjangoObjectType):
     class Meta:
         model = Candidate
-        fields = '__all__'  # Inclure tous les champs du modèle Candidate
+        fields = '__all__'
 
 
-# Mutations GraphQL sécurisées
 class CreateCandidate(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
-        bio = graphene.String(required=True)
-        election_id = graphene.Int(required=True)
-        profile_picture = graphene.String()  # URL de l'image ou base64
+        description = graphene.String(required=True)
+        electionId = graphene.Int(required=True)
+        imageFile = graphene.String(required=False)
+        imageUrl = graphene.String(required=False)
 
     success = graphene.Boolean()
     message = graphene.String()
     candidate = graphene.Field(CandidateType)
 
-    def mutate(self, info, name, bio, election_id, profile_picture=None):
-        user = check_authentication(info)  # Vérification de l'authentification
+    def mutate(self, info, name, description, electionId, imageFile=None, imageUrl=None):
+        user = check_authentication(info)
         if not user:
             return CreateCandidate(success=False, message="Authentification requise.")
 
         if Candidate.objects.filter(name=name).exists():
             return CreateCandidate(success=False, message="Le nom du candidat existe déjà.")
 
-        try:
-            election = Election.objects.get(id=election_id)
-            candidate = Candidate(name=name, bio=bio, election=election)
+        if imageFile and imageUrl:
+            return CreateCandidate(success=False, message="Ne fournissez pas imageFile et imageUrl en même temps.")
 
-            if profile_picture:
-                candidate.profile_picture = profile_picture
+        try:
+            election = Election.objects.get(id=electionId)
+            candidate = Candidate(name=name, description=description, election=election)
+
+            if imageFile:
+                try:
+                    format, imgstr = imageFile.split(';base64,')
+                    ext = format.split('/')[-1]
+                    image_data = ContentFile(base64.b64decode(imgstr), name=f"{slugify(name)}.{ext}")
+                    image_path = default_storage.save(f"candidate_images/{image_data.name}", image_data)
+                    candidate.image_file = image_path
+                    candidate.image_url = None
+                except Exception as e:
+                    return CreateCandidate(success=False, message=f"Erreur upload image : {str(e)}")
+
+            elif imageUrl:
+                candidate.image_url = imageUrl
+                candidate.image_file = None
 
             candidate.save()
             return CreateCandidate(success=True, message="Candidat créé avec succès", candidate=candidate)
 
         except Election.DoesNotExist:
-            return CreateCandidate(success=False, message="L'élection spécifiée n'existe pas.")
+            return CreateCandidate(success=False, message="Élection introuvable")
 
 
 class UpdateCandidate(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
         name = graphene.String()
-        bio = graphene.String()
-        election_id = graphene.Int()
-        profile_picture = graphene.String()
-    
+        description = graphene.String()
+        imageFile = graphene.String(required=False)
+        imageUrl = graphene.String(required=False)
+
     success = graphene.Boolean()
     message = graphene.String()
     candidate = graphene.Field(CandidateType)
-  
-    def mutate(self, info, id, name=None, bio=None, election_id=None, profile_picture=None):
-        user = check_authentication(info)  # Vérification de l'authentification
+
+    def mutate(self, info, id, name=None, description=None, imageFile=None, imageUrl=None):
+        user = check_authentication(info)
         if not user:
             return UpdateCandidate(success=False, message="Authentification requise.")
 
         try:
             candidate = Candidate.objects.get(id=id)
         except Candidate.DoesNotExist:
-            return UpdateCandidate(success=False, message="Le candidat n'existe pas.")
+            return UpdateCandidate(success=False, message="Candidat introuvable.")
 
         if name and Candidate.objects.filter(name=name).exclude(id=id).exists():
-            return UpdateCandidate(success=False, message="Le nom du candidat existe déjà.")
+            return UpdateCandidate(success=False, message="Nom déjà utilisé.")
 
         if name:
             candidate.name = name
-        if bio:
-            candidate.bio = bio
-        if election_id:
+        if description:
+            candidate.description = description
+
+        if imageFile and imageUrl:
+            return UpdateCandidate(success=False, message="Ne fournissez pas imageFile et imageUrl en même temps.")
+
+        if imageFile:
             try:
-                election = Election.objects.get(id=election_id)
-                candidate.election = election
-            except Election.DoesNotExist:
-                return UpdateCandidate(success=False, message="L'élection spécifiée n'existe pas.")
-        if profile_picture:
-            candidate.profile_picture = profile_picture
+                format, imgstr = imageFile.split(';base64,')
+                ext = format.split('/')[-1]
+                image_data = ContentFile(base64.b64decode(imgstr), name=f"{slugify(candidate.name)}.{ext}")
+                image_path = default_storage.save(f"candidate_images/{image_data.name}", image_data)
+                candidate.image_file = image_path
+                candidate.image_url = None
+            except Exception as e:
+                return UpdateCandidate(success=False, message=f"Erreur upload image : {str(e)}")
+
+        elif imageUrl:
+            candidate.image_url = imageUrl
+            candidate.image_file = None
 
         candidate.save()
-
-        return UpdateCandidate(success=True, message="Candidat mis à jour avec succès", candidate=candidate)
+        return UpdateCandidate(success=True, message="Candidat mis à jour", candidate=candidate)
 
 
 class DeleteCandidate(graphene.Mutation):
@@ -96,43 +123,42 @@ class DeleteCandidate(graphene.Mutation):
     message = graphene.String()
 
     def mutate(self, info, id):
-        user = check_authentication(info)  # Vérification de l'authentification
+        user = check_authentication(info)
         if not user:
             return DeleteCandidate(success=False, message="Authentification requise.")
 
         try:
             candidate = Candidate.objects.get(id=id)
             candidate.delete()
-            return DeleteCandidate(success=True, message="Candidat supprimé avec succès")
+            return DeleteCandidate(success=True, message="Candidat supprimé.")
         except Candidate.DoesNotExist:
-            return DeleteCandidate(success=False, message="Le candidat n'existe pas.")
+            return DeleteCandidate(success=False, message="Candidat introuvable.")
 
 
-# Requête GraphQL
 class Query(graphene.ObjectType):
     all_candidates = graphene.List(CandidateType)
     candidate = graphene.Field(CandidateType, id=graphene.Int(required=True))
 
     def resolve_all_candidates(self, info):
-        user = check_authentication(info)  # Vérification de l'authentification
+        user = check_authentication(info)
         if not user:
             return None
         return Candidate.objects.all()
 
     def resolve_candidate(self, info, id):
-        user = check_authentication(info)  # Vérification de l'authentification
+        user = check_authentication(info)
         if not user:
             return None
         try:
-            return Candidate.objects.get(pk=id)
+            return Candidate.objects.get(id=id)
         except Candidate.DoesNotExist:
             return None
 
 
-# Schéma final
 class Mutation(graphene.ObjectType):
     create_candidate = CreateCandidate.Field()
     update_candidate = UpdateCandidate.Field()
     delete_candidate = DeleteCandidate.Field()
+
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

@@ -15,17 +15,16 @@ export interface User {
 
 // ====================
 // Interfaces Candidat
-// ====================
 export interface Candidate {
-  id?: number;
-  name?: string;
-  bio?: string;
-  voteCount?: number;
-  profilePicture?: string | null;
-  createdAt?: string;
-  election: Election; // objet Election complet obligatoire
+  id: number;                      // obligatoire
+  election?: Election ;      // nullable, objet Election complet
+  name?: string ;
+  description?: string ;
+  vote_count?: number;
+  imageFile?: string | null ; // nom du fichier image, nullable
+  imageUrl?: string | null; // URL de l'image, nullable
+  created_at?: string ;      // date ISO en string, nullable
 }
-
 // ====================
 // Interfaces Élection
 // ====================
