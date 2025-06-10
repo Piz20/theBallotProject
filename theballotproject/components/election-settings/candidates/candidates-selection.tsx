@@ -54,53 +54,56 @@ export default function CandidatesSection({ electionId }: CandidatesSectionProps
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!electionId) return;
+    e.preventDefault();
+      console.log("Submitting formData:", formData);
 
-  try {
-    if (editingCandidate) {
-      console.log(formData.imageUrl, formData.imageFile);
-      await updateCandidate({
-        variables: {
-          id: parseInt(editingCandidate.id),
-          name: formData.name,
-          description: formData.description,
-          imageUrl: formData.imageUrl || null,
-          imageFile: formData.imageFile || null,
-          electionId,
-        },
-      });
-      alert('Candidate updated successfully!');
-    } else {
-      await createCandidate({
-        variables: {
-          name: formData.name,
-          description: formData.description,
-          electionId,
-          imageUrl: formData.imageUrl || null,
-          imageFile: formData.imageFile || null,
-        },
-      });
-      alert('Candidate created successfully!');
+    if (!electionId) return;
+
+    try {
+      if (editingCandidate) {
+        console.log('Updating candidate with formData:', formData);
+
+        await updateCandidate({
+          variables: {
+            id: parseInt(editingCandidate.id),
+            name: formData.name || '',
+            description: formData.description || '',
+            imageUrl: formData.imageUrl || null,
+            imageFile: formData.imageFile || null,
+            electionId,
+          },
+        });
+        alert('Candidate updated successfully!');
+      } else {
+        await createCandidate({
+          variables: {
+            name: formData.name,
+            description: formData.description,
+            electionId,
+            imageUrl: formData.imageUrl || null,
+            imageFile: formData.imageFile || null,
+          },
+        });
+        alert('Candidate created successfully!');
+      }
+
+      await refetch();
+      setEditingCandidate(null);
+      setFormData({ name: '', description: '', imageFile: '', imageUrl: '' });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Error saving candidate:', err);
+      alert('Error saving candidate');
     }
-
-    await refetch();
-    setEditingCandidate(null);
-    setFormData({ name: '', description: '', imageFile: '', imageUrl: '' });
-    setShowAddForm(false);
-  } catch (err) {
-    console.error('Error saving candidate:', err);
-    alert('Error saving candidate');
-  }
-};
+  };
 
 
   const handleEdit = (candidate: any) => {
     setEditingCandidate(candidate);
     setFormData({
       name: candidate.name,
-      description: candidate.description || '',
-      imageFile: candidate.imageFile || '',
+      description: candidate.description,
+       imageFile: '',
       imageUrl: candidate.imageUrl || '',
     });
     setShowAddForm(true);
@@ -150,7 +153,11 @@ export default function CandidatesSection({ electionId }: CandidatesSectionProps
             <input
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                console.log("Name changed:", e.target.value);
+              }}
+              
               className="w-full px-3 py-2 border border-gray-300 rounded"
             />
           </div>
