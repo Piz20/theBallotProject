@@ -5,13 +5,14 @@ import { useParams } from "next/navigation";
 import ElectionForm from "@/components/election-settings/election/election-form";
 import NavigationTabs from "@/components/election-settings/navigation-tabs";
 import CandidatesSection from "@/components/election-settings/candidates/candidates-selection";
+import VotersSelection from "@/components/election-settings/voters/voters-selection"; // Import the VotersSelection component
 import Footer from "@/components/ui/footer";
 import { Vote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-type Tab = "general" | "candidates";
+type Tab = "general" | "candidates" | "voters";
 
 const ElectionEditPage: React.FC = () => {
   const { id } = useParams();
@@ -71,6 +72,11 @@ const ElectionEditPage: React.FC = () => {
 
             {activeTab === "candidates" && typeof idValue === "number" && (
               <CandidatesSection electionId={idValue} />
+            )}
+
+            {/* Render VotersSelection component when activeTab is 'voters' */}
+            {activeTab === "voters" && typeof idValue === "number" && (
+              <VotersSelection electionId={idValue} />
             )}
           </div>
         </main>
