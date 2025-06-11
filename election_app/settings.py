@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import timedelta  # Importer timedelta
 from corsheaders.defaults import default_headers  # Import default_headers
 
+
 # Ton secret key pour signer le JWT
 
 # Other settings...
@@ -114,7 +115,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'electionapp',
-        'HOST': 'localhost\\SQLEXPRESS03',
+        'HOST': 'localhost\\SQLEXPRESS01',
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'TrustServerCertificate': 'yes',

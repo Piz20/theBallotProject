@@ -12,7 +12,7 @@ from graphene.types.generic import GenericScalar
 # Clé API Gemini
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Initialisation du client Gemini
 def initialize_genai_client(api_key):
