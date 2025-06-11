@@ -11,6 +11,8 @@ import { Vote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Toaster } from "@/components/ui/toaster";
+
 
 type Tab = "general" | "candidates" | "voters";
 
@@ -23,6 +25,7 @@ const ElectionEditPage: React.FC = () => {
   return (
     <>
       <title>Edit Election - TheBallotProject</title>
+        <Toaster/>
 
       {/* Main container for sticky footer */}
       {/* Use min-h-screen to ensure it takes at least the full viewport height */}

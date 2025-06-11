@@ -7,7 +7,9 @@ from election_app.api.graphql import (
     candidate_schema,
     query_generator_schema,
     mail_schema,
-    message_schema
+    eligible_email_schema ,
+    message_schema ,
+    
 )
 
 class Query(
@@ -16,6 +18,7 @@ class Query(
     vote_schema.Query,
     candidate_schema.Query,
     query_generator_schema.Query,
+    eligible_email_schema.Query,
     message_schema.Query,
     graphene.ObjectType,
 ):
@@ -28,6 +31,7 @@ class Mutation(
     candidate_schema.Mutation,
     mail_schema.Mutation, 
     message_schema.Mutation,
+    eligible_email_schema.Mutation,
     graphene.ObjectType,
 ):
     pass
