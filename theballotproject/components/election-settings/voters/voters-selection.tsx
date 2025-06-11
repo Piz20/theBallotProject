@@ -156,77 +156,53 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
 
   const [deleteEligibleEmailMutation, { loading: deleteLoading }] = useMutation(DELETE_ELIGIBLE_EMAIL, {
     update(cache, { data }) {
-      // Option 1: Si votre mutation de suppression retourne l'ID de l'élément supprimé (le plus courant)
-      // Par exemple, si votre mutation GraphQL est `deleteEligibleEmail(id: ID!): ID!`
-      // et que le retour est `data: { deleteEligibleEmail: "3" }`
-      if (data && data.deleteEligibleEmail) { // Assurez-vous que deleteEligibleEmail est l'ID, ou l'objet avec l'ID
-        const deletedId = data.deleteEligibleEmail.id || data.deleteEligibleEmail; // Si c'est l'objet, prenez l'ID, sinon l'ID directement
+        // Assurez-vous que data et data.deleteEligibleEmail existent et contiennent l'ID
+        // C'est l'OPTION 2 : la mutation retourne l'objet EligibleEmailType supprimé
+        if (data && data.deleteEligibleEmail && data.deleteEligibleEmail.id) {
+            const deletedEligibleEmail = data.deleteEligibleEmail;
+            const deletedEmailId = deletedEligibleEmail.id;
 
-        // Étape 1: Supprimer l'objet de l'entité racine du cache
-        // C'est la méthode la plus directe pour "oublier" un objet par son ID
-        // Assurez-vous que l'ID est bien formaté comme un `cache.identify` le ferait pour `EligibleEmailType`
-        const type = 'EligibleEmailType'; // Remplacez par le __typename réel de votre type EligibleEmail
-        const cacheId = cache.identify({ __typename: type, id: deletedId });
+            // 1. Expulser l'objet supprimé du cache global d'Apollo
+            // cache.identify() créera l'ID de cache unique à partir de l'objet fourni.
+            const cacheIdToDelete = cache.identify(deletedEligibleEmail);
 
-        if (cacheId) {
-          cache.evict({ id: cacheId });
-          cache.gc(); // Nettoyer le cache pour retirer les références orphelines
+            if (cacheIdToDelete) {
+                cache.evict({ id: cacheIdToDelete });
+                cache.gc(); // Exécute le garbage collection pour nettoyer les références orphelines
+            }
+
+            // 2. Mettre à jour la liste des emails éligibles pour cette élection
+            // On filtre la liste pour retirer la référence à l'objet supprimé.
+            cache.modify({
+                fields: {
+                    // Cette fonction sera appelée pour le champ 'eligibleEmailsByElection'
+                    // de toutes les requêtes qui contiennent ce champ dans le cache.
+                    eligibleEmailsByElection(existingEmailsRefs = [], { readField }) {
+                        // Retourne une nouvelle liste sans l'email qui vient d'être supprimé
+                        return existingEmailsRefs.filter(
+                            (eligibleEmailRef: any) => readField('id', eligibleEmailRef) !== deletedEmailId
+                        );
+                    },
+                },
+            });
         }
-
-        // Étape 2: Mettre à jour la liste dans la requête GET_ELIGIBLE_EMAILS_BY_ELECTION
-        // C'est nécessaire car `evict` ne met pas à jour les listes, juste les entités individuelles.
-        cache.modify({
-          fields: {
-            eligibleEmailsByElection(existingEmailsRefs = [], { readField }) {
-              // Filtrez les références pour exclure l'élément supprimé
-              return existingEmailsRefs.filter(
-                (eligibleEmailRef: any) => readField('id', eligibleEmailRef) !== deletedId
-              );
-            },
-          },
-        });
-      }
-
-      // Option 2 (moins probable pour la suppression simple): Si votre mutation retourne un objet avec l'ID
-      // Si votre mutation est `deleteEligibleEmail(id: ID!): EligibleEmailType`
-      // et que le retour est `data: { deleteEligibleEmail: { id: "3", email: "..." } }`
-      /*
-      if (data && data.deleteEligibleEmail && data.deleteEligibleEmail.id) {
-          const deletedEmailId = data.deleteEligibleEmail.id;
-          
-          // Supprime l'objet du cache
-          cache.evict({ id: cache.identify(data.deleteEligibleEmail) });
-          cache.gc();
-
-          // Puis met à jour la liste
-          cache.modify({
-              fields: {
-                  eligibleEmailsByElection(existingEmailsRefs = [], { readField }) {
-                      return existingEmailsRefs.filter(
-                          (eligibleEmailRef: any) => readField('id', eligibleEmailRef) !== deletedEmailId
-                      );
-                  },
-              },
-          });
-      }
-      */
     },
     onCompleted: () => {
-      addToast({
-        title: 'Succès',
-        message: 'Email éligible supprimé avec succès !',
-        variant: 'success',
-      });
+        addToast({
+            title: 'Succès',
+            message: 'Email éligible supprimé avec succès !',
+            variant: 'success',
+        });
     },
     onError: (mutationError: ApolloError) => {
-      console.error("Erreur lors de la suppression de l'email éligible:", mutationError);
-      addToast({
-        title: 'Échec de la suppression',
-        message: `Échec de la suppression : ${mutationError.message}`,
-        variant: 'error',
-      });
+        console.error("Erreur lors de la suppression de l'email éligible:", mutationError);
+        addToast({
+            title: 'Échec de la suppression',
+            message: `Échec de la suppression : ${mutationError.message}`,
+            variant: 'error',
+        });
     }
-  });
+});
   // --- Fonctions de gestion du formulaire ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
