@@ -5,6 +5,8 @@ import { Mail, Search, Users, Plus, Edit2, Trash2, Sparkles, Loader2, AlertCircl
 import { useQuery, useMutation, useLazyQuery, ApolloError } from '@apollo/client';
 import { useToastStore } from '@/hooks/useToastStore';
 import { EligibleEmail, Election, User } from '../../../interfaces/interfaces';
+
+ import {toCamelCase} from '../../../lib/utils' ;
 // Import your GraphQL queries and mutations
 import {
   GET_ELIGIBLE_EMAILS_BY_ELECTION,
@@ -79,12 +81,9 @@ const VotersSelection: React.FC<VotersSelectionProps> = ({ electionId: propElect
   >(VOTER_SEARCH_QUERY, {
     fetchPolicy: 'no-cache',
     errorPolicy: 'all',
-
     onCompleted: (data) => {
       if (data?.voterSearch) {
-        // data.voterSearch est déjà un objet JS (pas une string)
         const result: VoterSearchResult = data.voterSearch;
-
         if (result.error) {
           addToast({
             title: 'Erreur de recherche',
@@ -95,15 +94,18 @@ const VotersSelection: React.FC<VotersSelectionProps> = ({ electionId: propElect
           return;
         }
 
-        const filtered = result.data.filter(
-          (user) => user.email && !eligibleEmails.some((e) => e.email === user.email)
-        );
-        setSearchResults(filtered);
+        // Ne plus filtrer, garder tous les users retournés
+        const enrichedResults = result.data.map(user => ({
+          ...user,
+          alreadyEligible: eligibleEmails.some(e => e.email === user.email),
+        }));
 
-        if (filtered.length === 0 && searchQuery.trim() !== '') {
+        setSearchResults(enrichedResults);
+
+        if (enrichedResults.length === 0 && searchQuery.trim() !== '') {
           addToast({
             title: 'Aucun résultat',
-            message: "Aucun utilisateur trouvé correspondant à votre recherche ou tous sont déjà ajoutés.",
+            message: "Aucun utilisateur trouvé correspondant à votre recherche.",
             variant: 'default',
           });
         }
@@ -369,25 +371,67 @@ const VotersSelection: React.FC<VotersSelectionProps> = ({ electionId: propElect
     setSearchQuery(e.target.value);
   };
 
-  const handleSearch = () => {
-    if (!searchQuery.trim()) {
-      addToast({
-        title: 'Recherche vide',
-        message: 'Veuillez entrer un terme de recherche.',
-        variant: 'default',
-      });
-      return;
-    }
-
-    console.log("Exécution de la recherche avec le prompt:", searchQuery);
-
-    // Utiliser le prompt exact de l'utilisateur pour la requête IA
-    executeVoterSearch({
-      variables: {
-        prompt: searchQuery.trim() // Le prompt exact tapé par l'utilisateur
-      }
+const handleSearch = () => {
+  if (!searchQuery.trim()) {
+    addToast({
+      title: 'Recherche vide',
+      message: 'Veuillez entrer un terme de recherche.',
+      variant: 'default',
     });
-  };
+    return;
+  }
+
+  console.log("Exécution de la recherche avec le prompt:", searchQuery);
+
+  executeVoterSearch({
+    variables: {
+      prompt: searchQuery.trim(), // Le prompt exact tapé par l'utilisateur
+    },
+    onCompleted: (data) => {
+      if (data?.voterSearch) {
+        const result: VoterSearchResult = data.voterSearch;
+        if (result.error) {
+          addToast({
+            title: 'Erreur de recherche',
+            message: result.error,
+            variant: 'error',
+          });
+          setSearchResults([]);
+          return;
+        }
+
+        // Transformer chaque user en camelCase avant enrichissement
+        const transformedResults = result.data.map(user => toCamelCase(user));
+
+        // Enrichir avec alreadyEligible comme tu le faisais
+        const enrichedResults = transformedResults.map(user => ({
+          ...user,
+          alreadyEligible: eligibleEmails.some(e => e.email === user.email),
+        }));
+
+        setSearchResults(enrichedResults);
+
+        if (enrichedResults.length === 0 && searchQuery.trim() !== '') {
+          addToast({
+            title: 'Aucun résultat',
+            message: "Aucun utilisateur trouvé correspondant à votre recherche.",
+            variant: 'default',
+          });
+        }
+      }
+    },
+    onError: (err) => {
+      console.error("Erreur lors de la recherche:", err);
+      addToast({
+        title: 'Erreur de recherche',
+        message: "Échec de la recherche d'utilisateurs. Veuillez réessayer.",
+        variant: 'error',
+      });
+      setSearchResults([]);
+    },
+  });
+};
+
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -549,28 +593,38 @@ const VotersSelection: React.FC<VotersSelectionProps> = ({ electionId: propElect
               <Sparkles className="w-4 h-4 text-purple-600" />
               Résultats de la recherche ({searchResults.length} utilisateurs trouvés)
             </h4>
-            {searchResults.map((user) => (
-              <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded border">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-purple-600" />
+            {searchResults.map((user) => {
+              const isAlreadyEligible = eligibleEmails.some(e => e.email === user.email);
+              return (
+                <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-gray-900">{user.name || 'Nom non disponible'}</p>
+                      <p className="text-sm text-gray-600">{user.email || 'Email non disponible'}</p>
+                      {user.gender && <p className="text-xs text-gray-500">Genre: {user.gender}</p>}
+                      {user.dateOfBirth && <p className="text-xs text-gray-500">Né(e) le: {user.dateOfBirth}</p>}
+                      {isAlreadyEligible && (
+                        <p className="text-xs text-green-600 font-semibold">Déjà ajouté</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm text-gray-900">{user.name || 'Nom non disponible'}</p>
-                    <p className="text-sm text-gray-600">{user.email || 'Email non disponible'}</p>
-                    {user.matricule && <p className="text-xs text-gray-500">Matricule: {user.matricule}</p>}
-                    {user.dateOfBirth && <p className="text-xs text-gray-500">Né(e) le: {user.dateOfBirth}</p>}
-                  </div>
+                  <button
+                    onClick={() => addFromSearch(user)}
+                    disabled={!user.email || isAlreadyEligible}
+                    className={`px-3 py-1 rounded text-sm transition-colors ${isAlreadyEligible
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                      }`}
+                  >
+                    Ajouter
+                  </button>
                 </div>
-                <button
-                  onClick={() => addFromSearch(user)}
-                  disabled={!user.email}
-                  className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Ajouter
-                </button>
-              </div>
-            ))}
+              );
+            })}
+
           </div>
         )}
 

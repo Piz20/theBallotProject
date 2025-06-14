@@ -140,22 +140,22 @@ def generate_d3_code(prompt, data):
 
 def voter_search_gemini(prompt, data):
     request = f"""
-    Voici le schéma de ma base de données : {schema_bd}.
-    
-    Retourne moi la liste des utilisateurs de l'appli qui correspondent à la requête suivante : {prompt}. 
-    
-    Le resultat retourne , doit etre une liste d objets de la table des utilisateurs , retourne moi tous ses champs avec toutes les valeurs reelles de ces champs
-    
-    si aucun utilisateur ne correspond aux criteres retourne un json vide
-    
-    les dates sont en temps reelles pour les comparaisons 
-    
-    tu dois etre capable de faire des operations complexes sur les données, comme des jointures, des filtres, des tris, des operations mathematiques des comparaisons il faut bien comprendre.
-    
-    Et Voici les données associées : {data}.
+   Voici le schéma de ma base de données : {schema_bd}.
 
-    Surtout, n’ajoute aucun commentaire. Je veux juste les donnees de ce user sous forme de Json.
-    """
+Retourne la liste des utilisateurs correspondant à la requête suivante : {prompt}.
+
+Le résultat doit être un tableau JSON d’objets issus de la table des utilisateurs, incluant **tous les champs** sans exception.
+
+Si aucun utilisateur ne correspond, retourne un tableau JSON vide (`[]`).
+
+Les dates doivent être traitées en temps réel pour les comparaisons.
+
+Tu dois pouvoir effectuer des opérations complexes : jointures, filtres, tris, calculs et comparaisons.
+
+Voici également les données associées : {data}.
+
+Ne fournis aucun commentaire, uniquement les données JSON strictes.
+"""
 
     # Appel à l'API Gemini pour générer le code D3.js avec les données réelles
     response = client.models.generate_content(model="gemini-2.0-flash", contents=request)
