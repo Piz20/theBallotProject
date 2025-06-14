@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Search, Users, Plus, Edit2, Trash2, Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import { useQuery, useMutation, ApolloError } from '@apollo/client';
+import { useQuery, useMutation, useLazyQuery, ApolloError } from '@apollo/client';
 import { useToastStore } from '@/hooks/useToastStore';
-
+import { EligibleEmail, Election, User } from '../../../interfaces/interfaces';
 // Import your GraphQL queries and mutations
 import {
   GET_ELIGIBLE_EMAILS_BY_ELECTION,
@@ -12,14 +12,22 @@ import {
   UPDATE_ELIGIBLE_EMAIL,
   DELETE_ELIGIBLE_EMAIL,
 } from "../../../lib/mutations/eligibleEmailMutations";
+import { VOTER_SEARCH_QUERY } from "../../../lib/mutations/queryGeneratorMutations";
 
-interface EligibleEmail {
-  id: number;
-  email: string;
-  election: {
-    id: number;
-    name: string;
-  };
+
+interface VoterSearchResult {
+  sql_query: string;
+  error?: string;
+  prompt_used?: string;
+  data: User[];
+}
+
+interface VoterSearchData {
+  voterSearch: VoterSearchResult; // objet, pas string
+}
+
+interface VoterSearchVars {
+  prompt: string;
 }
 
 interface VotersSelectionProps {
@@ -27,7 +35,7 @@ interface VotersSelectionProps {
 }
 
 const VotersSelection: React.FC<VotersSelectionProps> = ({ electionId: propElectionId }) => {
-  const { addToast, removeToast } = useToastStore();
+  const { addToast } = useToastStore();
 
   const electionId = typeof propElectionId === 'string' ? parseInt(propElectionId, 10) : propElectionId;
 
@@ -47,21 +55,71 @@ const VotersSelection: React.FC<VotersSelectionProps> = ({ electionId: propElect
     email: '',
   });
 
-  const [aiQuery, setAiQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<EligibleEmail[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
 
   // --- Requête GraphQL pour récupérer les emails éligibles ---
-const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET_ELIGIBLE_EMAILS_BY_ELECTION, {
+  const { loading: queryLoading, error: queryError, data } = useQuery(GET_ELIGIBLE_EMAILS_BY_ELECTION, {
     variables: { electionId: electionId },
-    fetchPolicy: 'cache-and-network', // Pour toujours s'assurer d'avoir les données les plus fraîches du serveur
+    fetchPolicy: 'cache-and-network',
     onCompleted: (queryData) => {
-        if (queryData && queryData.eligibleEmailsByElection) {
-            setEligibleEmails(queryData.eligibleEmailsByElection);
-        }
+      if (queryData && queryData.eligibleEmailsByElection) {
+        setEligibleEmails(queryData.eligibleEmailsByElection);
+      }
     },
-    onError: (err) => { /* ... */ }
-});
+    onError: (err) => {
+      console.error("Erreur lors du chargement des emails éligibles:", err);
+    }
+  });
+
+
+  const [executeVoterSearch, { loading: searchLoading, error: searchError }] = useLazyQuery<
+    VoterSearchData,
+    VoterSearchVars
+  >(VOTER_SEARCH_QUERY, {
+    fetchPolicy: 'no-cache',
+    errorPolicy: 'all',
+
+    onCompleted: (data) => {
+      if (data?.voterSearch) {
+        // data.voterSearch est déjà un objet JS (pas une string)
+        const result: VoterSearchResult = data.voterSearch;
+
+        if (result.error) {
+          addToast({
+            title: 'Erreur de recherche',
+            message: result.error,
+            variant: 'error',
+          });
+          setSearchResults([]);
+          return;
+        }
+
+        const filtered = result.data.filter(
+          (user) => user.email && !eligibleEmails.some((e) => e.email === user.email)
+        );
+        setSearchResults(filtered);
+
+        if (filtered.length === 0 && searchQuery.trim() !== '') {
+          addToast({
+            title: 'Aucun résultat',
+            message: "Aucun utilisateur trouvé correspondant à votre recherche ou tous sont déjà ajoutés.",
+            variant: 'default',
+          });
+        }
+      }
+    }
+    ,
+    onError: (err) => {
+      console.error("Erreur lors de la recherche:", err);
+      addToast({
+        title: 'Erreur de recherche',
+        message: "Échec de la recherche d'utilisateurs. Veuillez réessayer.",
+        variant: 'error',
+      });
+      setSearchResults([]);
+    },
+  });
 
 
   // Mise à jour de `eligibleEmails` quand les données de la query changent
@@ -71,29 +129,29 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
     }
   }, [data]);
 
-
   // --- Mutations GraphQL optimisées avec `update` du cache ---
-  // ... (code existant)
-
   const [createEligibleEmailMutation, { loading: createLoading }] = useMutation(CREATE_ELIGIBLE_EMAIL, {
-    update(cache, { data }) { // Accédez directement à 'data'
-      // Assurez-vous que 'data' existe et contient 'createEligibleEmail' et que 'eligibleEmail' est bien présent
+    update(cache, { data }) {
       if (data && data.createEligibleEmail && data.createEligibleEmail.eligibleEmail) {
-        const newEligibleEmail = data.createEligibleEmail.eligibleEmail; // C'est l'objet EligibleEmailType que vous voulez !
+        const newEligibleEmail = data.createEligibleEmail.eligibleEmail;
 
-        const existingEmails = cache.readQuery<{ eligibleEmailsByElection: EligibleEmail[] }>({
-          query: GET_ELIGIBLE_EMAILS_BY_ELECTION,
-          variables: { electionId: electionId },
-        });
-
-        if (existingEmails) {
-          cache.writeQuery({
+        try {
+          const existingEmails = cache.readQuery<{ eligibleEmailsByElection: EligibleEmail[] }>({
             query: GET_ELIGIBLE_EMAILS_BY_ELECTION,
             variables: { electionId: electionId },
-            data: {
-              eligibleEmailsByElection: [...existingEmails.eligibleEmailsByElection, newEligibleEmail],
-            },
           });
+
+          if (existingEmails) {
+            cache.writeQuery({
+              query: GET_ELIGIBLE_EMAILS_BY_ELECTION,
+              variables: { electionId: electionId },
+              data: {
+                eligibleEmailsByElection: [...existingEmails.eligibleEmailsByElection, newEligibleEmail],
+              },
+            });
+          }
+        } catch (cacheError) {
+          console.warn("Erreur de mise à jour du cache:", cacheError);
         }
       }
     },
@@ -116,25 +174,26 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
     }
   });
 
-  // ... (reste du code)
-
   const [updateEligibleEmailMutation, { loading: updateLoading }] = useMutation(UPDATE_ELIGIBLE_EMAIL, {
-    update(cache, { data: { updateEligibleEmail } }) {
-      // Utilisez cache.modify pour mettre à jour l'objet existant dans le cache
-      // Cela fonctionne mieux si la mutation retourne l'objet complet mis à jour
-      cache.modify({
-        id: cache.identify(updateEligibleEmail), // Obtenez l'identifiant de cache de l'objet mis à jour
-        fields: {
-          // Vous pouvez spécifier les champs à modifier, par exemple, l'email
-          email() {
-            return updateEligibleEmail.email;
-          }
-          // Si d'autres champs changent, ajoutez-les ici
-        },
-      });
+    update(cache, { data }) {
+      if (data && data.updateEligibleEmail && data.updateEligibleEmail.eligibleEmail) {
+        const updatedEligibleEmail = data.updateEligibleEmail.eligibleEmail;
+
+        try {
+          cache.modify({
+            id: cache.identify(updatedEligibleEmail),
+            fields: {
+              email() {
+                return updatedEligibleEmail.email;
+              }
+            },
+          });
+        } catch (cacheError) {
+          console.warn("Erreur de mise à jour du cache:", cacheError);
+        }
+      }
     },
     onCompleted: () => {
-      // Pas besoin de refetch() ici
       addToast({
         title: 'Succès',
         message: 'Email éligible mis à jour avec succès !',
@@ -142,7 +201,7 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
       });
       setShowAddForm(false);
       setEditingEligibleEmail(null);
-      setFormData({ email: '' }); // Réinitialisez le formulaire
+      setFormData({ email: '' });
     },
     onError: (mutationError: ApolloError) => {
       console.error("Erreur lors de la mise à jour de l'email éligible:", mutationError);
@@ -156,53 +215,49 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
 
   const [deleteEligibleEmailMutation, { loading: deleteLoading }] = useMutation(DELETE_ELIGIBLE_EMAIL, {
     update(cache, { data }) {
-        // Assurez-vous que data et data.deleteEligibleEmail existent et contiennent l'ID
-        // C'est l'OPTION 2 : la mutation retourne l'objet EligibleEmailType supprimé
-        if (data && data.deleteEligibleEmail && data.deleteEligibleEmail.id) {
-            const deletedEligibleEmail = data.deleteEligibleEmail;
-            const deletedEmailId = deletedEligibleEmail.id;
+      if (data && data.deleteEligibleEmail && data.deleteEligibleEmail.success) {
+        try {
+          const existingEmails = cache.readQuery<{ eligibleEmailsByElection: EligibleEmail[] }>({
+            query: GET_ELIGIBLE_EMAILS_BY_ELECTION,
+            variables: { electionId: electionId },
+          });
 
-            // 1. Expulser l'objet supprimé du cache global d'Apollo
-            // cache.identify() créera l'ID de cache unique à partir de l'objet fourni.
-            const cacheIdToDelete = cache.identify(deletedEligibleEmail);
+          if (existingEmails) {
+            // Filtrer l'email supprimé de la liste
+            const updatedEmails = existingEmails.eligibleEmailsByElection.filter(
+              email => email.id !== parseInt(String(data.deleteEligibleEmail.id || 0))
+            );
 
-            if (cacheIdToDelete) {
-                cache.evict({ id: cacheIdToDelete });
-                cache.gc(); // Exécute le garbage collection pour nettoyer les références orphelines
-            }
-
-            // 2. Mettre à jour la liste des emails éligibles pour cette élection
-            // On filtre la liste pour retirer la référence à l'objet supprimé.
-            cache.modify({
-                fields: {
-                    // Cette fonction sera appelée pour le champ 'eligibleEmailsByElection'
-                    // de toutes les requêtes qui contiennent ce champ dans le cache.
-                    eligibleEmailsByElection(existingEmailsRefs = [], { readField }) {
-                        // Retourne une nouvelle liste sans l'email qui vient d'être supprimé
-                        return existingEmailsRefs.filter(
-                            (eligibleEmailRef: any) => readField('id', eligibleEmailRef) !== deletedEmailId
-                        );
-                    },
-                },
+            cache.writeQuery({
+              query: GET_ELIGIBLE_EMAILS_BY_ELECTION,
+              variables: { electionId: electionId },
+              data: {
+                eligibleEmailsByElection: updatedEmails,
+              },
             });
+          }
+        } catch (cacheError) {
+          console.warn("Erreur de mise à jour du cache:", cacheError);
         }
+      }
     },
     onCompleted: () => {
-        addToast({
-            title: 'Succès',
-            message: 'Email éligible supprimé avec succès !',
-            variant: 'success',
-        });
+      addToast({
+        title: 'Succès',
+        message: 'Email éligible supprimé avec succès !',
+        variant: 'success',
+      });
     },
     onError: (mutationError: ApolloError) => {
-        console.error("Erreur lors de la suppression de l'email éligible:", mutationError);
-        addToast({
-            title: 'Échec de la suppression',
-            message: `Échec de la suppression : ${mutationError.message}`,
-            variant: 'error',
-        });
+      console.error("Erreur lors de la suppression de l'email éligible:", mutationError);
+      addToast({
+        title: 'Échec de la suppression',
+        message: `Échec de la suppression : ${mutationError.message}`,
+        variant: 'error',
+      });
     }
-});
+  });
+
   // --- Fonctions de gestion du formulaire ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,7 +328,7 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
   const handleEdit = (eligibleEmail: EligibleEmail) => {
     setEditingEligibleEmail(eligibleEmail);
     setFormData({
-      email: eligibleEmail.email,
+      email: eligibleEmail.email ?? '',
     });
     setShowAddForm(true);
   };
@@ -289,12 +344,9 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
       return;
     }
 
-    // Ici, nous utilisons window.confirm avant de potentiellement appeler addToast avec duration: 0.
-    // C'est parce que votre système de toasts actuel ne prend pas en charge les boutons "Oui/Non" directement.
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet email éligible ? Cette action est irréversible.')) {
       try {
         await deleteEligibleEmailMutation({ variables: { id: idToDelete } });
-        // Le toast de succès/erreur sera géré par onCompleted/onError de la mutation
       } catch (opError) {
         console.error("Échec de l'opération de suppression:", opError);
         addToast({
@@ -306,84 +358,57 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
     }
   };
 
-
   const handleCancel = () => {
     setShowAddForm(false);
     setEditingEligibleEmail(null);
     setFormData({ email: '' });
   };
 
-  // --- Logique de recherche AI (toujours simulée) ---
-  const debounce = (func: Function, delay: number) => {
-    let timeout: ReturnType<typeof setTimeout>;
-    return (...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), delay);
-    };
+  // --- Logique de recherche avec le prompt exact de l'utilisateur ---
+  const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
-  const debouncedAiSearch = useCallback(
-    debounce(async (query: string) => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        setIsSearching(false);
-        return;
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      addToast({
+        title: 'Recherche vide',
+        message: 'Veuillez entrer un terme de recherche.',
+        variant: 'default',
+      });
+      return;
+    }
+
+    console.log("Exécution de la recherche avec le prompt:", searchQuery);
+
+    // Utiliser le prompt exact de l'utilisateur pour la requête IA
+    executeVoterSearch({
+      variables: {
+        prompt: searchQuery.trim() // Le prompt exact tapé par l'utilisateur
       }
-
-      setIsSearching(true);
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const mockAiEmails: EligibleEmail[] = [
-          { id: 1001, email: 'user.ai.1@example.com', election: { id: electionId, name: 'Current Election' } },
-          { id: 1002, email: 'test.ai.2@company.com', election: { id: electionId, name: 'Current Election' } },
-          { id: 1003, email: 'candidate.ai.3@domain.org', election: { id: electionId, name: 'Current Election' } },
-          { id: 1004, email: 'contact.ai.4@global.net', election: { id: electionId, name: 'Current Election' } },
-          { id: 1005, email: 'developer.ai.5@tech.io', election: { id: electionId, name: 'Current Election' } },
-        ];
-
-        const filtered = mockAiEmails.filter(ee =>
-          ee.email.toLowerCase().includes(query.toLowerCase())
-        );
-
-        const newResults = filtered.filter(
-          (result) => !eligibleEmails.some((existing) => existing.email === result.email)
-        );
-
-        setSearchResults(newResults);
-        if (newResults.length === 0 && query.trim() !== '') {
-          addToast({
-            title: 'Aucun résultat',
-            message: 'Aucun email trouvé correspondant à votre recherche.',
-            variant: 'default',
-          });
-        }
-      } catch (err) {
-        console.error("Erreur lors de la recherche AI simulée:", err);
-        addToast({
-          title: 'Erreur de recherche',
-          message: "Échec de la recherche AI. Veuillez réessayer.",
-          variant: 'error',
-        });
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 500),
-    [eligibleEmails, electionId]
-  );
-
-  const handleAiQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setAiQuery(query);
-    debouncedAiSearch(query);
+    });
   };
 
-  const addFromSearch = async (emailToAdd: EligibleEmail) => {
-    if (eligibleEmails.some(ee => ee.email === emailToAdd.email)) {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const addFromSearch = async (userToAdd: User) => {
+    if (!userToAdd.email) {
+      addToast({
+        title: 'Email manquant',
+        message: `L'utilisateur "${userToAdd.name || 'Inconnu'}" n'a pas d'adresse email.`,
+        variant: 'error',
+      });
+      return;
+    }
+
+    if (eligibleEmails.some(ee => ee.email === userToAdd.email)) {
       addToast({
         title: 'Déjà présent',
-        message: `L'email "${emailToAdd.email}" est déjà dans votre liste.`,
+        message: `L'email "${userToAdd.email}" est déjà dans votre liste.`,
         variant: 'default',
       });
       return;
@@ -393,17 +418,16 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
       await createEligibleEmailMutation({
         variables: {
           electionId: electionId,
-          email: emailToAdd.email,
+          email: userToAdd.email,
         },
       });
       // Mettre à jour les searchResults localement après ajout réussi
-      setSearchResults(searchResults.filter(v => v.email !== emailToAdd.email));
-      setAiQuery(''); // Réinitialiser la recherche
+      setSearchResults(searchResults.filter(u => u.id !== userToAdd.id));
     } catch (opError) {
       console.error("Échec de l'ajout depuis la recherche:", opError);
       addToast({
         title: 'Erreur d\'ajout',
-        message: "Échec de l'ajout depuis la recherche AI. Veuillez réessayer.",
+        message: "Échec de l'ajout depuis la recherche. Veuillez réessayer.",
         variant: 'error',
       });
     }
@@ -480,31 +504,31 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
         </form>
       )}
 
-      {/* Section de recherche AI (simulation front-end) */}
+      {/* Section de recherche AI avec vraies données */}
       <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
         <div className="flex items-center gap-3 mb-3">
           <Sparkles className="w-5 h-5 text-purple-600" />
-          <h3 className="text-lg font-medium text-gray-900">Recherche d'emails éligibles par IA (Simulée)</h3>
+          <h3 className="text-lg font-medium text-gray-900">Recherche d'utilisateurs par IA</h3>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          Utilisez la recherche AI pour trouver et ajouter des emails. (Cette partie est encore une simulation frontend sans appel API réel pour la recherche AI spécifique).
+          Utilisez la recherche IA pour trouver des utilisateurs et les ajouter comme emails éligibles.
         </p>
 
         <div className="flex gap-3 mb-4">
           <input
             type="text"
-            placeholder="Rechercher des emails éligibles..."
-            value={aiQuery}
-            onChange={handleAiQueryChange}
-            onKeyPress={(e) => e.key === 'Enter' && debouncedAiSearch(aiQuery)}
+            placeholder="Rechercher des utilisateurs... (ex: 'tous les utilisateurs de l'informatique')"
+            value={searchQuery}
+            onChange={handleSearchQueryChange}
+            onKeyPress={handleKeyPress}
             className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
           />
           <button
-            onClick={() => debouncedAiSearch(aiQuery)}
-            disabled={!aiQuery.trim() || isSearching}
+            onClick={handleSearch}
+            disabled={!searchQuery.trim() || searchLoading}
             className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            {isSearching ? (
+            {searchLoading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 Recherche...
@@ -523,25 +547,36 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
           <div className="space-y-2 mt-4">
             <h4 className="font-medium text-gray-900 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-purple-600" />
-              Résultats de la recherche AI
+              Résultats de la recherche ({searchResults.length} utilisateurs trouvés)
             </h4>
-            {searchResults.map((result) => (
-              <div key={result.id} className="flex items-center justify-between bg-white p-3 rounded border">
+            {searchResults.map((user) => (
+              <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded border">
                 <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-gray-400" />
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <Users className="w-5 h-5 text-purple-600" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-600">{result.email}</p>
-                    <p className="text-xs text-gray-500">Élection: {result.election.name}</p>
+                    <p className="font-medium text-sm text-gray-900">{user.name || 'Nom non disponible'}</p>
+                    <p className="text-sm text-gray-600">{user.email || 'Email non disponible'}</p>
+                    {user.matricule && <p className="text-xs text-gray-500">Matricule: {user.matricule}</p>}
+                    {user.dateOfBirth && <p className="text-xs text-gray-500">Né(e) le: {user.dateOfBirth}</p>}
                   </div>
                 </div>
                 <button
-                  onClick={() => addFromSearch(result)}
-                  className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors"
+                  onClick={() => addFromSearch(user)}
+                  disabled={!user.email}
+                  className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Ajouter
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {searchError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">Erreur lors de la recherche: {searchError.message}</p>
           </div>
         )}
       </div>
@@ -550,7 +585,7 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
       {eligibleEmails.length === 0 && !queryLoading ? (
         <div className="text-center py-8 text-gray-500">
           <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p>Aucun email éligible ajouté pour le moment. Utilisez le bouton "Ajouter un email" ou la recherche AI.</p>
+          <p>Aucun email éligible ajouté pour le moment. Utilisez le bouton "Ajouter un email" ou la recherche IA.</p>
         </div>
       ) : (
         !queryLoading && (
@@ -565,7 +600,7 @@ const { loading: queryLoading, error: queryError, data, refetch } = useQuery(GET
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-600">{eligibleEmail.email}</p>
-                  <p className="text-xs text-gray-500">Élection: {eligibleEmail.election.name}</p>
+                  <p className="text-xs text-gray-500">Élection: {eligibleEmail.election?.name ?? 'N/A'}</p>
                 </div>
                 <div className="flex gap-2">
                   <button

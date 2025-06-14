@@ -43,12 +43,21 @@ export interface Election {
   candidates?: Candidate[];  // Liste des candidats, si exposée par l'API
 }
 
+
+export interface EligibleEmail {
+  id: number;
+  email?: string;
+  election?: Election ;
+  createdAt? :string ;
+}
+
+
 // ====================
 // Interfaces Vote
 // ====================
 export interface Vote {
   user: number | User;
-  candidate: number | Candidate;
-  election: number | Election;
+  candidate?: number | Candidate;
+  election?: number | Election;
   createdAt: string;
 }

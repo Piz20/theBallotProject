@@ -138,7 +138,7 @@ class EligibleEmail(models.Model):
     id = models.AutoField(primary_key=True)
     election = models.ForeignKey(Election, related_name='eligible_emails', on_delete=models.CASCADE)
     email = models.EmailField(validators=[EmailValidator()], db_index=True)
-
+    created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         unique_together = ('election', 'email')  # Pour éviter les doublons
 
