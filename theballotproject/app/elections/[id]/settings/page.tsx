@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
-import ElectionForm from "@/components/election-settings/election/election-form";
+import ElectionForm from "@/components/election-settings/election/election-settings/election-form";
 import NavigationTabs from "@/components/election-settings/navigation-tabs";
 import CandidatesSection from "@/components/election-settings/candidates/candidates-selection";
 import VotersSelection from "@/components/election-settings/voters/voters-selection"; // Import the VotersSelection component

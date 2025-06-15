@@ -7,7 +7,7 @@ import {
   UPDATE_CANDIDATE,
   DELETE_CANDIDATE,
 } from '@/lib/mutations/candidateMutations';
-import ImageUploadSelection from '@/components/election-settings/election/image-upload-selection';
+import ImageUploadSelection from '@/components/election-settings/election/election-settings/image-upload-selection';
 
 interface CandidatesSectionProps {
   electionId?: number;

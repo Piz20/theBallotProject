@@ -138,6 +138,7 @@ class DeleteCandidate(graphene.Mutation):
 class Query(graphene.ObjectType):
     all_candidates = graphene.List(CandidateType)
     candidate = graphene.Field(CandidateType, id=graphene.Int(required=True))
+    candidates_by_election = graphene.List(CandidateType, election_id=graphene.Int(required=True))  # 👈 ajouté
 
     def resolve_all_candidates(self, info):
         user = check_authentication(info)
@@ -154,6 +155,11 @@ class Query(graphene.ObjectType):
         except Candidate.DoesNotExist:
             return None
 
+    def resolve_candidates_by_election(self, info, election_id):  # 👈 nouvelle méthode
+        user = check_authentication(info)
+        if not user:
+            return None
+        return Candidate.objects.filter(election__id=election_id)
 
 class Mutation(graphene.ObjectType):
     create_candidate = CreateCandidate.Field()

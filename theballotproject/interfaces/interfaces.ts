@@ -15,7 +15,7 @@ export interface User {
 
 // ====================
 // Interfaces Candidat
-export interface Candidate {
+export  interface Candidate {
   id: number;                      // obligatoire
   election?: Election ;      // nullable, objet Election complet
   name?: string ;
