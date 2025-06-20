@@ -18,11 +18,10 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
   hasVoted,
   votedFor,
   totalVotes,
-  isElectionEnded
+  isElectionEnded,
 }) => {
   const votePercentage = totalVotes > 0 ? ((candidate.vote_count ?? 0) / totalVotes) * 100 : 0;
   const isVotedFor = votedFor === candidate.id;
-
   const imageSrc = candidate.imageUrl || candidate.imageFile || null;
 
   return (
@@ -34,7 +33,11 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
       <div className="flex items-center mb-4">
         <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mr-4 overflow-hidden">
           {imageSrc ? (
-            <img src={imageSrc} alt={candidate.name ?? 'Candidat'} className="w-full h-full object-cover" />
+            <img
+              src={imageSrc}
+              alt={candidate.name ?? 'Candidat'}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <User size={32} className="text-gray-500" />
           )}
@@ -44,9 +47,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
             {candidate.name ?? 'Nom inconnu'}
           </h3>
           {candidate.election?.name && (
-            <p className="text-sm text-blue-500 font-medium">
-              {candidate.election.name}
-            </p>
+            <p className="text-sm text-blue-500 font-medium">{candidate.election.name}</p>
           )}
         </div>
         {isVotedFor && <Check className="text-green-500" size={24} />}
@@ -84,18 +85,17 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
         </div>
       )}
 
+      {/* ✅ BOUTON MODIFIÉ */}
       <button
         onClick={() => onVote(candidate.id)}
         disabled={isElectionEnded}
-        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-          isElectionEnded
+        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2
+          ${isElectionEnded
             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
             : isVotedFor
-            ? 'bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg'
-            : hasVoted
-            ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg'
-            : 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg'
-        }`}
+            ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
+            : 'bg-blue-500 hover:bg-blue-600 text-white shadow-md'}
+        `}
       >
         <Vote size={18} />
         <span>
@@ -103,8 +103,6 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
             ? 'Vote terminé'
             : isVotedFor
             ? 'Vote enregistré'
-            : hasVoted
-            ? 'Changer de vote'
             : 'Voter'}
         </span>
       </button>

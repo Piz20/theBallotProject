@@ -21,6 +21,7 @@ import {
 import Footer from '@/components/ui/footer';
 import { Button } from '@/components/ui/button';
 import Loader from '@/components/ui/loader';
+import AIAnalysis from '@/components/election-settings/election/election-details/ai-analysis';
 
 const ElectionVotingPage = () => {
     const { id } = useParams();
@@ -40,7 +41,8 @@ const ElectionVotingPage = () => {
     });
 
     // Nouvelle requête pour récupérer le vote existant de l'utilisateur
-    const { data: userVoteData, loading: userVoteLoading } = useQuery(GET_USER_VOTE_IN_ELECTION, {
+    const { data: userVoteData, loading: userVoteLoading, refetch: refetchUserVote,
+    } = useQuery(GET_USER_VOTE_IN_ELECTION, {
         variables: { electionId },
         skip: !electionId,
         fetchPolicy: 'cache-and-network', // Pour s'assurer d'avoir les données les plus récentes
@@ -100,7 +102,6 @@ const ElectionVotingPage = () => {
 
     const election = data?.election;
     const endDate = election?.endDate ? new Date(election.endDate) : new Date(Date.now() + 2 * 60 * 60 * 1000);
-
     const handleVote = async (candidateIdParam: number | string) => {
         if (isElectionEnded) return;
 
@@ -138,10 +139,6 @@ const ElectionVotingPage = () => {
             setTotalVotes(prev => prev + 1);
         }
 
-        // Mise à jour optimiste de l'état
-        setHasVoted(true);
-        setVotedFor(candidateId);
-
         try {
             const { data } = await createOrUpdateVote({
                 variables: {
@@ -153,13 +150,12 @@ const ElectionVotingPage = () => {
             if (data?.createOrUpdateVote.success) {
                 setUserVoteId(data.createOrUpdateVote.vote?.id ?? null);
                 console.log('Vote enregistré avec succès:', data.createOrUpdateVote.vote);
+                await refetchUserVote(); // ✅ met à jour hasVoted et votedFor
             } else {
-                // Rollback si erreur côté serveur
                 rollbackVote(candidateId, previousCandidateId);
                 console.error('Erreur côté serveur :', data?.createOrUpdateVote.message);
             }
         } catch (error) {
-            // Rollback si erreur réseau
             rollbackVote(candidateId, previousCandidateId);
             console.error('Erreur mutation vote :', error);
         }
@@ -230,6 +226,8 @@ const ElectionVotingPage = () => {
                 rollbackCancelVote(candidateId);
             } else {
                 console.log('Vote annulé avec succès');
+                await refetchUserVote(); // ✅ force la mise à jour visuelle
+
             }
         } catch (err) {
             console.error('Erreur mutation suppression vote:', err);
@@ -274,7 +272,7 @@ const ElectionVotingPage = () => {
                         </Link>
                     </Button>
                 </div>
-                
+
                 <div className="container mx-auto px-4 py-8 max-w-7xl">
                     {/* Election Title */}
                     <div className="text-center mb-8">
@@ -288,6 +286,13 @@ const ElectionVotingPage = () => {
                     {/* Timer */}
                     <Timer endTime={endDate} onElectionEnd={handleElectionEnd} />
 
+                    {/* AI Analysis */}
+                    <AIAnalysis
+                        candidates={candidates}
+                        totalVotes={totalVotes}
+                        isElectionEnded={isElectionEnded}
+                    />
+
                     <div className="grid lg:grid-cols-3 gap-8 mt-8">
                         {/* Candidates Section */}
                         <div className="lg:col-span-2">
@@ -296,7 +301,7 @@ const ElectionVotingPage = () => {
                                     <Users className="text-gray-700 mr-2" size={24} />
                                     <h2 className="text-2xl font-bold text-gray-800">Candidats</h2>
                                 </div>
-                                
+
                                 {hasVoted && !isElectionEnded && (
                                     <button
                                         onClick={handleCancelVote}

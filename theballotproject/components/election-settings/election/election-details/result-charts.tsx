@@ -15,9 +15,11 @@ const ResultsChart: React.FC<ResultsChartProps> = ({
   totalVotes,
   isElectionEnded,
 }) => {
+  // Trier les candidats par nombre de votes décroissant
   const sortedCandidates = [...candidates].sort(
     (a, b) => (b.vote_count ?? 0) - (a.vote_count ?? 0)
   );
+
   const winner = sortedCandidates[0];
 
   const getIcon = (index: number) => {
@@ -57,7 +59,7 @@ const ResultsChart: React.FC<ResultsChartProps> = ({
         <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-lg mb-6 text-center">
           <Crown className="mx-auto mb-2" size={32} />
           <h2 className="text-2xl font-bold">🎉 Félicitations !</h2>
-          <p className="text-lg">{winner.name} remporte l'élection !</p>
+          <p className="text-lg">{winner.name} remporte l&apos;élection !</p>
           <p className="text-sm opacity-90">
             {((winner.vote_count ?? 0) / totalVotes * 100).toFixed(1)}% des votes (
             {winner.vote_count}/{totalVotes})
@@ -82,9 +84,7 @@ const ResultsChart: React.FC<ResultsChartProps> = ({
                       className="w-6 h-6 rounded-full object-cover"
                     />
                   )}
-                  <span className="font-medium text-gray-700">
-                    {candidate.name}
-                  </span>
+                  <span className="font-medium text-gray-700">{candidate.name}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-bold text-gray-800">
