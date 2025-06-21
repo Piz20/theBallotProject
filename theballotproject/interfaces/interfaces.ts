@@ -15,7 +15,7 @@ export interface User {
 
 // ====================
 // Interfaces Candidat
-export interface Candidate {
+export  interface Candidate {
   id: number;                      // obligatoire
   election?: Election ;      // nullable, objet Election complet
   name?: string ;
@@ -43,12 +43,21 @@ export interface Election {
   candidates?: Candidate[];  // Liste des candidats, si exposée par l'API
 }
 
+
+export interface EligibleEmail {
+  id: number;
+  email?: string;
+  election?: Election ;
+  createdAt? :string ;
+}
+
+
 // ====================
 // Interfaces Vote
 // ====================
 export interface Vote {
   user: number | User;
-  candidate: number | Candidate;
-  election: number | Election;
+  candidate?: number | Candidate;
+  election?: number | Election;
   createdAt: string;
 }

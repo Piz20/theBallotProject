@@ -74,6 +74,24 @@ export const CREATE_CANDIDATE = gql`
   }
 `;
 
+export const GET_CANDIDATES_BY_ELECTION_ID = gql`
+  query GetCandidatesByElectionId($electionId: Int!) {
+    candidatesByElection(electionId: $electionId) {
+      id
+      name
+      description
+      voteCount
+      imageFile
+      imageUrl
+      createdAt
+      election {
+        id
+        name
+      }
+    }
+  }
+`;
+
 
 export const UPDATE_CANDIDATE = gql`
   mutation UpdateCandidate(

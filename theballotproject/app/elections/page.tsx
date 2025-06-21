@@ -413,7 +413,7 @@ export default function ElectionPage() {
 
                         <Calendar className="h-4 w-4 text-gray-500" />
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">{truncateText(election.name ?? "",35)}</h3>
+                      <h3 className="text-lg font-semibold mb-2">{truncateText(election.name ?? "", 35)}</h3>
                       <p className="text-sm text-gray-600 mb-4">{truncateText(election.description ?? "", 100)}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -422,10 +422,14 @@ export default function ElectionPage() {
                             {Array.isArray(election.eligibleEmails) ? election.eligibleEmails.length : 0} eligible voters
                           </span>
                         </div>
-                        <button className="text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                        <Link
+                          href={`/elections/${election.id}/details`}
+                          className="text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center"
+                        >
                           View details
                           <ChevronRight className="ml-1 h-4 w-4" />
-                        </button>
+                        </Link>
+
                       </div>
                       <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
                         <div className="flex justify-between">

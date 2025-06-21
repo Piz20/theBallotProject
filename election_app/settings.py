@@ -110,9 +110,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'election_app.wsgi.application'
 
-
-# Ancienne configuration pour la base de données locale (commentée)
+# Configuration de la base de données (MSSQL)
 DATABASES = {
+    'default': {
+        'ENGINE': 'mssql',
+        'NAME': 'electionapp',
+        'HOST': 'localhost\\SQLEXPRESS03',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'TrustServerCertificate': 'yes',
+            'Encrypt': 'no',
+            'trusted_connection': 'yes',
+        },
+    }
+}
+
+"""DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'electionapp',
@@ -124,7 +137,7 @@ DATABASES = {
             'trusted_connection': 'yes',
         },
     }
-}
+}"""
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

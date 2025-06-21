@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
-import ElectionForm from "@/components/election-settings/election/election-form";
+import ElectionForm from "@/components/election-settings/election/election-settings/election-form";
 import NavigationTabs from "@/components/election-settings/navigation-tabs";
 import CandidatesSection from "@/components/election-settings/candidates/candidates-selection";
 import VotersSelection from "@/components/election-settings/voters/voters-selection"; // Import the VotersSelection component
@@ -11,6 +11,8 @@ import { Vote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Toaster } from "@/components/ui/toaster";
+
 
 type Tab = "general" | "candidates" | "voters";
 
@@ -23,6 +25,7 @@ const ElectionEditPage: React.FC = () => {
   return (
     <>
       <title>Edit Election - TheBallotProject</title>
+        <Toaster/>
 
       {/* Main container for sticky footer */}
       {/* Use min-h-screen to ensure it takes at least the full viewport height */}

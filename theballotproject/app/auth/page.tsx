@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
-import { differenceInYears, parseISO } from "date-fns";
 
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Vote, Cake } from "lucide-react";
 
@@ -22,7 +21,6 @@ import { useToastStore } from '@/hooks/useToastStore';
 
 import { useMutation, useQuery } from "@apollo/client";
 import { REGISTER_USER, LOGIN_USER, ME_QUERY } from "@/lib/mutations/userMutations"; // Assurez-vous que vous avez bien ce fichier et cette mutation.
-import Loader from "@/components/ui/loader";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),

@@ -12,7 +12,7 @@ def check_authentication(info, must_be_authenticated=True):
 
 
 
-def reformat_html(html_code: str) -> str:
+def reformat_result(result: str) -> str:
     """
     Reformats HTML code to improve readability by adding basic indentation
     and removes unnecessary backslashes and ALL newline characters.
@@ -27,39 +27,44 @@ def reformat_html(html_code: str) -> str:
     """
 
     # Remove outer quotes if present
-    html_code = html_code.strip()
-    if (html_code.startswith('"') and html_code.endswith('"')) or \
-       (html_code.startswith("'") and html_code.endswith("'")):
-        html_code = html_code[1:-1].strip()
+    result = result.strip()
+    if (result.startswith('"') and result.endswith('"')) or \
+       (result.startswith("'") and result.endswith("'")):
+        result = result[1:-1].strip()
 
     # Remove ```html``` block markers if present (case-insensitive)
-    if html_code.lower().startswith("```html"):
-        html_code = html_code[len("```html"):].lstrip()
-    if html_code.endswith("```"):
-        html_code = html_code[:-len("```")].rstrip()
+    if result.lower().startswith("```html"):
+        result = result[len("```html"):].lstrip()
+    if result.endswith("```"):
+        result = result[:-len("```")].rstrip()
+        
+    if result.lower().startswith("```json"):
+        result = result[len("```json"):].lstrip()
+    if result.endswith("```"):
+        result = result[:-len("```")].rstrip()
 
     # Remove unnecessary backslashes before quotes
-    html_code = html_code.replace('\\"', '"')
-    html_code = html_code.replace("\\'", "'")
+    result = result.replace('\\"', '"')
+    result = result.replace("\\'", "'")
 
     # Remove ALL newline characters
-    html_code = html_code.replace('\n', '')
+    result = result.replace('\n', '')
 
     # Remove extra whitespace
     import re
-    html_code = re.sub(r'\s+', ' ', html_code)
+    result = re.sub(r'\s+', ' ', result)
 
     # Basic indentation
     indentation_level = 0
     indent_size = 2
     reformatted_code = ""
     i = 0
-    while i < len(html_code):
-        char = html_code[i]
+    while i < len(result):
+        char = result[i]
 
         if char == '<':
-            next_tag = html_code[i+1:i+10].lower()
-            is_closing_tag = html_code[i+1] == '/'
+            next_tag = result[i+1:i+10].lower()
+            is_closing_tag = result[i+1] == '/'
             is_self_closing = any(next_tag.startswith(tag) for tag in ['br', 'hr', 'img', 'input', 'meta', '!doctype'])
 
             if is_closing_tag:

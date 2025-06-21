@@ -4,10 +4,10 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { Calendar, Clock, Info, Save } from "lucide-react";
 import { Election } from "@/interfaces/interfaces";
-import ImageUploadSection from "@/components/election-settings/election/image-upload-selection";
+import ImageUploadSection from "@/components/election-settings/election/election-settings/image-upload-selection";
 import { isStartDateBeforeEndDate, formatDateTimeForInput } from "@/lib/utils";
-import LoadingState from "@/components/election-settings/election/loading-state";
-import ErrorState from "@/components/election-settings/election/error-state";
+import LoadingState from "@/components/election-settings/election/election-settings/loading-state";
+import ErrorState from "@/components/election-settings/election/election-settings/error-state";
 import { GET_ELECTION_BY_ID, UPDATE_ELECTION } from "@/lib/mutations/electionMutations";
 
 interface ElectionFormProps {
