@@ -110,7 +110,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'election_app.wsgi.application'
 
-# Configuration de la base de données (MSSQL)
+
+# Ancienne configuration pour la base de données locale (commentée)
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
