@@ -2,13 +2,13 @@ import graphene
 from graphene_django.types import DjangoObjectType
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from ...models import Candidate, Vote, Election, User # Assurez-vous d'importer votre modèle User
+from ...models import Candidate, Vote, Election, CustomUser # Assurez-vous d'importer votre modèle User
 from .utils import check_authentication  # Fonction de vérification d'authentification
 
 # Type GraphQL pour User (si ce n'est pas déjà défini ailleurs et importé)
 class UserType(DjangoObjectType):
     class Meta:
-        model = User # Remplacez User par le nom de votre modèle User si différent (ex: CustomUser)
+        model = CustomUser # Remplacez User par le nom de votre modèle User si différent (ex: CustomUser)
         fields = ('id', 'name', 'email') # Ajustez les champs selon votre modèle User
 
 # Type GraphQL pour Candidate (doit être disponible pour le champ 'candidate' dans VoteType)

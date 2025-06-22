@@ -1,111 +1,233 @@
-import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, BarChart3, Users } from 'lucide-react';
-
+import React from 'react';
+import { Brain, TrendingUp, Users, BarChart3, Zap, Target, Activity, Sparkles, Cpu, PieChart, LineChart } from 'lucide-react';
+import { Candidate } from '@/interfaces/interfaces';
+import { GET_CANDIDATES_BY_ELECTION_ID } from '@/lib/mutations/candidateMutations';
+import { useQuery } from '@apollo/client';
 interface AIAnalysisProps {
-  candidates: any[];
+  candidates: Candidate[];
   totalVotes: number;
-  isElectionEnded: boolean;
 }
 
-const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes, isElectionEnded }) => {
-  const [analysis, setAnalysis] = useState('');
-  const [prediction, setPrediction] = useState('');
+const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
+
   
-  useEffect(() => {
-    // Simuler l'analyse IA en temps réel
-    const generateAnalysis = () => {
-      if (totalVotes === 0) {
-        setAnalysis("En attente des premiers votes pour commencer l'analyse...");
-        setPrediction("Aucune prédiction disponible");
-        return;
-      }
+  const { data: candidatesData } = useQuery(GET_CANDIDATES_BY_ELECTION_ID, {
+    variables: {
+      electionId: candidates.length
+        ? parseInt(String(candidates[0]?.election?.id), 10)
+        : 1
+    },
+    pollInterval: 2000,
+    skip: !candidates.length
+  });
 
-      const leader = candidates.reduce((prev, current) => 
-        prev.votes > current.votes ? prev : current
-      );
 
-      const secondPlace = candidates
-        .filter(c => c.id !== leader.id)
-        .reduce((prev, current) => prev.votes > current.votes ? prev : current);
-
-      const leadPercentage = ((leader.votes / totalVotes) * 100).toFixed(1);
-      const margin = leader.votes - secondPlace.votes;
-
-      if (isElectionEnded) {
-        setAnalysis(`🏆 Élection terminée ! ${leader.name} remporte la victoire avec ${leadPercentage}% des votes (${leader.votes} votes au total). Marge de victoire: ${margin} votes.`);
-        setPrediction(`Résultat final confirmé: ${leader.name} est élu(e) !`);
-      } else {
-        setAnalysis(`📊 Tendance actuelle: ${leader.name} mène avec ${leadPercentage}% des votes. Participation: ${totalVotes} votes enregistrés. La course reste ${margin < 10 ? 'très serrée' : margin < 50 ? 'compétitive' : 'dominée par le leader'}.`);
-        
-        if (margin < 10) {
-          setPrediction("🔥 Course très serrée ! Le résultat final reste imprévisible.");
-        } else if (margin < 50) {
-          setPrediction(`⚖️ ${leader.name} a un avantage, mais rien n'est encore joué.`);
-        } else {
-          setPrediction(`📈 ${leader.name} semble bien parti(e) pour remporter l'élection.`);
-        }
-      }
+  const freshCandidates = candidatesData?.candidatesByElection || candidates;
+  interface FreshCandidate {
+    id: number | string;
+    name: string;
+    vote_count?: number;
+    voteCount?: number;
+    election?: {
+      id: number | string;
     };
+    [key: string]: any;
+  }
 
-    generateAnalysis();
-    
-    if (!isElectionEnded) {
-      const interval = setInterval(generateAnalysis, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [candidates, totalVotes, isElectionEnded]);
+  const freshTotalVotes: number = (freshCandidates as FreshCandidate[]).reduce((sum: number, candidate: FreshCandidate) => {
+    const voteCount: number = candidate.vote_count ?? candidate.voteCount ?? 0;
+    return sum + voteCount;
+  }, 0);
+
+  const getLeadingCandidate = () => {
+    return (freshCandidates as FreshCandidate[]).reduce(
+      (prev: FreshCandidate, current: FreshCandidate) => {
+        const prevVotes: number = prev.vote_count || prev.voteCount || 0;
+        const currentVotes: number = current.vote_count || current.voteCount || 0;
+        return currentVotes > prevVotes ? current : prev;
+      }
+    );
+  };
+
+  const getVotePercentage = (votes: number) => {
+    return freshTotalVotes > 0 ? ((votes / freshTotalVotes) * 100).toFixed(1) : '0.0';
+  };
+
+  const generateInsights = () => {
+    const leader = getLeadingCandidate();
+    const sortedCandidates = [...freshCandidates].sort((a, b) => {
+      const aVotes = a.vote_count || a.voteCount || 0;
+      const bVotes = b.vote_count || b.voteCount || 0;
+      return bVotes - aVotes;
+    });
+
+    const leaderVotes = sortedCandidates[0]?.vote_count || sortedCandidates[0]?.voteCount || 0;
+    const secondVotes = sortedCandidates[1]?.vote_count || sortedCandidates[1]?.voteCount || 0;
+
+    const margin = freshTotalVotes > 0 ? ((leaderVotes - secondVotes) / freshTotalVotes * 100) : 0;
+    const dominance = freshTotalVotes > 0 ? (leaderVotes / freshTotalVotes * 100) : 0;
+
+    const competitiveness = margin < 5 ? 'Très serrée' : margin < 15 ? 'Compétitive' : 'Dominante';
+    const winProbability = Math.min(95, Math.max(55, 50 + (margin * 2)));
+    const confidence = margin > 15 ? 95 : margin > 5 ? 78 : 62;
+
+    return {
+      leader,
+      margin: margin.toFixed(1),
+      dominance: dominance.toFixed(1),
+      competitiveness,
+      isCloseRace: margin < 10,
+      participation: freshTotalVotes,
+      winProbability,
+      confidence
+    };
+  };
+
+  const insights = generateInsights();
+  const leaderVotes = insights.leader.vote_count || insights.leader.voteCount || 0;
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 mb-8 border border-indigo-200">
-      <div className="flex items-center mb-4">
-        <Brain className="text-indigo-600 mr-3" size={28} />
-        <h2 className="text-2xl font-bold text-gray-800">Analyse IA en Temps Réel</h2>
-      </div>
-      
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center mb-3">
-            <BarChart3 className="text-blue-500 mr-2" size={20} />
-            <h3 className="font-semibold text-gray-700">Analyse Actuelle</h3>
+    <div className="bg-white rounded-lg p-6 border shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="p-3 bg-purple-100 rounded-lg">
+            <Brain className="w-6 h-6 text-purple-600" />
           </div>
-          <p className="text-gray-600 text-sm leading-relaxed">{analysis}</p>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Analyse IA</h3>
+            <p className="text-gray-600 text-sm">Prédictions en temps réel</p>
+          </div>
         </div>
-        
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center mb-3">
-            <TrendingUp className="text-green-500 mr-2" size={20} />
-            <h3 className="font-semibold text-gray-700">Prédiction</h3>
-          </div>
-          <p className="text-gray-600 text-sm leading-relaxed">{prediction}</p>
+
+        <div className="flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200">
+          <Activity className="w-4 h-4" />
+          <span className="font-medium text-sm">IA Active</span>
         </div>
       </div>
-      
-      <div className="mt-4 bg-white rounded-lg p-4 shadow-sm">
-        <div className="flex items-center mb-3">
-          <Users className="text-purple-500 mr-2" size={20} />
-          <h3 className="font-semibold text-gray-700">Statistiques</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Prédiction Principale */}
+        <div className="lg:col-span-2 bg-purple-50 rounded-lg p-6 border border-purple-200">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 bg-purple-500 rounded-lg">
+              <Target className="w-6 h-6 text-white" />
+            </div>
+
+            <div className="flex-1">
+              <h4 className="font-bold text-gray-900 mb-3 text-lg">Prédiction Avancée</h4>
+
+              <p className="text-gray-700 mb-4">
+                <span className="font-bold text-purple-600">{insights.leader.name}</span> domine
+                avec <span className="font-bold text-lg text-purple-700">{getVotePercentage(leaderVotes)}%</span> des voix
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-700 text-sm">Probabilité de victoire</span>
+                    <span className="text-lg font-bold text-purple-600">{insights.winProbability.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full bg-purple-200 rounded-full h-2">
+                    <div
+                      className="bg-purple-500 h-2 rounded-full transition-all duration-1000"
+                      style={{ width: `${insights.winProbability}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-700 text-sm">Confiance</span>
+                    <span className="text-lg font-bold text-indigo-600">{insights.confidence}%</span>
+                  </div>
+                  <p className="text-gray-600 text-xs">Niveau de certitude</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{totalVotes}</div>
-            <div className="text-sm text-gray-500">Votes totaux</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{candidates.length}</div>
-            <div className="text-sm text-gray-500">Candidats</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {totalVotes > 0 ? ((Math.max(...candidates.map(c => c.votes)) / totalVotes) * 100).toFixed(0) : 0}%
+
+        {/* Métriques */}
+        <div className="space-y-4">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <h5 className="font-bold text-gray-900">Tendance</h5>
             </div>
-            <div className="text-sm text-gray-500">Score leader</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {isElectionEnded ? '100' : Math.floor(Math.random() * 40 + 30)}%
+            <div>
+              <p className="text-blue-700 font-bold">{insights.competitiveness}</p>
+              <p className="text-gray-600 text-sm">Course {insights.competitiveness.toLowerCase()}</p>
             </div>
-            <div className="text-sm text-gray-500">Participation</div>
           </div>
+
+          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <Users className="w-5 h-5 text-green-600" />
+              <h5 className="font-bold text-gray-900">Participation</h5>
+            </div>
+            <div>
+              <p className="text-green-700 font-bold">
+                {freshTotalVotes > 100 ? 'Forte' : freshTotalVotes > 50 ? 'Modérée' : 'Faible'}
+              </p>
+              <p className="text-gray-600 text-sm">{freshTotalVotes} votes</p>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <BarChart3 className="w-5 h-5 text-amber-600" />
+              <h5 className="font-bold text-gray-900">Dominance</h5>
+            </div>
+            <div>
+              <p className="text-amber-700 font-bold">{insights.dominance}%</p>
+              <p className="text-gray-600 text-sm">Score du leader</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Insights détaillés */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+          <div className="flex items-start space-x-3">
+            <Zap className="w-5 h-5 text-indigo-600 mt-1" />
+            <div>
+              <h5 className="font-bold text-gray-900 mb-2">Momentum</h5>
+              <p className="text-gray-700 text-sm">
+                {insights.isCloseRace ?
+                  'La course reste très ouverte. Chaque vote compte.' :
+                  `${insights.leader.name} consolide son avance.`
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
+          <div className="flex items-start space-x-3">
+            <Brain className="w-5 h-5 text-pink-600 mt-1" />
+            <div>
+              <h5 className="font-bold text-gray-900 mb-2">Projection</h5>
+              <p className="text-gray-700 text-sm">
+                Confiance de <span className="font-bold text-pink-600">{insights.confidence}%</span>
+                basée sur les tendances actuelles.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Indicateur IA */}
+      <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+        <div className="inline-flex items-center space-x-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-lg border border-purple-200">
+          <div className="flex space-x-1">
+            <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse"></div>
+            <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse delay-150"></div>
+            <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse delay-300"></div>
+          </div>
+          <Brain className="w-4 h-4" />
+          <span className="font-medium text-sm">IA en analyse continue</span>
         </div>
       </div>
     </div>

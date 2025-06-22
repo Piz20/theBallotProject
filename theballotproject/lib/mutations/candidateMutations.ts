@@ -38,6 +38,24 @@ export const GET_CANDIDATE_BY_ID = gql`
   }
 `;
 
+export const GET_CANDIDATES_BY_ELECTION_ID = gql`
+  query GetCandidatesByElectionId($electionId: Int!) {
+    candidatesByElection(electionId: $electionId) {
+      id
+      name
+      description
+      voteCount
+      imageFile
+      imageUrl
+      createdAt
+      election {
+        id
+        name
+      }
+    }
+  }
+`;
+
 // ✍️ Mutations
 
 export const CREATE_CANDIDATE = gql`
@@ -74,25 +92,6 @@ export const CREATE_CANDIDATE = gql`
   }
 `;
 
-export const GET_CANDIDATES_BY_ELECTION_ID = gql`
-  query GetCandidatesByElectionId($electionId: Int!) {
-    candidatesByElection(electionId: $electionId) {
-      id
-      name
-      description
-      voteCount
-      imageFile
-      imageUrl
-      createdAt
-      election {
-        id
-        name
-      }
-    }
-  }
-`;
-
-
 export const UPDATE_CANDIDATE = gql`
   mutation UpdateCandidate(
     $id: Int!
@@ -114,9 +113,9 @@ export const UPDATE_CANDIDATE = gql`
         id
         name
         description
+        voteCount
         imageFile
         imageUrl
-        voteCount
         createdAt
         election {
           id
@@ -126,6 +125,7 @@ export const UPDATE_CANDIDATE = gql`
     }
   }
 `;
+
 export const DELETE_CANDIDATE = gql`
   mutation DeleteCandidate($id: Int!) {
     deleteCandidate(id: $id) {

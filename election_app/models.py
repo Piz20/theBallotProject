@@ -58,7 +58,7 @@ class CustomUser(AbstractUser):
         return self.email or "User without email"
 
 
-User = get_user_model()
+CustomUser = get_user_model()
 
 
 def validate_future_date(value):
@@ -179,6 +179,7 @@ class Candidate(models.Model):
 
 
 class Vote(models.Model):
+    id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE)
     election = models.ForeignKey(Election, on_delete=models.CASCADE)
