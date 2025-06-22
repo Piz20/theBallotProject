@@ -111,26 +111,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'election_app.wsgi.application'
 
 # Configuration de la base de données (MSSQL)
-
-
-
-"""DATABASES = {
-    'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'theballotproject',
-        'HOST': 'theballotproject.cbuqqi6e860w.eu-north-1.rds.amazonaws.com',
-        'USER': 'piz',  # Remplacez par votre nom d'utilisateur SQL Server
-        'PASSWORD': 'AyO8m0a!', # Remplacez par votre mot de passe SQL Server
-        'PORT': '1433',  # Port par défaut pour SQL Server
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'TrustServerCertificate': 'no',
-            'Encrypt': 'yes',
-            'trusted_connection': 'yes', # Cette option peut être retirée si vous utilisez USER/PASSWORD
-        },
-    }
-}"""
-
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
