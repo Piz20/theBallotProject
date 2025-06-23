@@ -125,15 +125,7 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
                     </span>
                   </div>
                 </div>
-
-                <div className="text-right min-w-fit">
-                  <div className="text-lg font-bold text-gray-900">
-                    {percentage.toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {voteCount} votes
-                  </div>
-                </div>
+                
               </div>
 
               {/* Barre de progression */}

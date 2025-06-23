@@ -106,17 +106,18 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
   const positionBadge = getPositionBadge();
 
   return (
-    <div className={`bg-white rounded-lg p-6 border transition-all duration-300 shadow-sm hover:shadow-md ${isSelected ? 'border-green-400 bg-green-50' : 'border-gray-200'
-      } ${isVoting ? 'scale-[1.02]' : ''}`}>
+    <div className={`relative bg-white rounded-lg p-6 border transition-all duration-300 shadow-sm hover:shadow-md ${isSelected ? 'border-green-400 bg-green-50' : 'border-gray-200'} ${isVoting ? 'scale-[1.02]' : ''}`}>
 
-      {/* Selection badge */}
+      {/* ✅ Coche verte si sélectionné */}
       {isSelected && (
-        <div className="absolute -top-2 -right-2 bg-green-500 text-white p-2 rounded-full shadow-lg">
-          <CheckCircle className="w-4 h-4" />
+        <div className="absolute top-3 right-3 z-20">
+          <div className="bg-green-500 rounded-full p-1 shadow-lg">
+            <CheckCircle className="w-5 h-5 text-white" />
+          </div>
         </div>
       )}
 
-      {/* Voting overlay in progress */}
+      {/* Overlay de vote en cours */}
       {isVoting && (
         <div className="absolute inset-0 bg-blue-50/90 rounded-lg flex items-center justify-center z-10">
           <div className="bg-white rounded-lg p-6 shadow-lg text-center">
@@ -129,8 +130,9 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
         </div>
       )}
 
+      {/* Corps de la carte */}
       <div className="flex items-center space-x-6">
-        {/* Candidate photo */}
+        {/* Image du candidat */}
         <div className="flex-shrink-0">
           {freshCandidate.imageUrl ? (
             <img
@@ -145,14 +147,12 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
           )}
         </div>
 
-        {/* Candidate information */}
+        {/* Infos du candidat */}
         <div className="flex-1">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-2">
-                <h3 className="text-xl font-bold text-gray-900">
-                  {freshCandidate.name}
-                </h3>
+                <h3 className="text-xl font-bold text-gray-900">{freshCandidate.name}</h3>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium border ${positionBadge.style}`}>
                   {positionBadge.text}
                 </span>
@@ -162,13 +162,12 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
                 {freshCandidate.description || 'Candidate committed to change.'}
               </p>
 
-              {/* Statistics */}
+              {/* Stats */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-blue-50 rounded-lg p-3 text-center">
                   <div className="text-lg font-bold text-blue-600">{voteCount}</div>
                   <div className="text-blue-500 text-xs font-medium">Votes</div>
                 </div>
-
                 <div className="bg-green-50 rounded-lg p-3 text-center">
                   <div className="text-lg font-bold text-green-600">{percentage.toFixed(1)}%</div>
                   <div className="text-green-500 text-xs font-medium">Share</div>
@@ -176,19 +175,17 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
               </div>
             </div>
 
-            {/* Voting section */}
+            {/* Zone de vote */}
             <div className="flex flex-col items-end space-y-4 ml-6">
               <button
                 onClick={handleVoteClick}
                 disabled={buttonState.disabled}
-                className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-300 flex items-center space-x-2 ${buttonState.style} ${!buttonState.disabled ? 'transform hover:scale-105' : 'cursor-not-allowed opacity-75'
-                  }`}
+                className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-300 flex items-center space-x-2 ${buttonState.style} ${!buttonState.disabled ? 'transform hover:scale-105' : 'cursor-not-allowed opacity-75'}`}
               >
                 <ButtonIcon className={`w-4 h-4 ${isVoting ? 'animate-spin' : ''}`} />
                 <span>{buttonState.text}</span>
               </button>
 
-              {/* Progress bar */}
               <div className="w-32">
                 <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                   <div
@@ -196,7 +193,6 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
                     style={{ width: `${Math.max(percentage, 2)}%` }}
                   />
                 </div>
-
                 <div className="text-center mt-2">
                   <span className="text-lg font-bold text-gray-900">{percentage.toFixed(1)}%</span>
                   <p className="text-gray-500 text-xs">of votes</p>
@@ -207,6 +203,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
         </div>
       </div>
     </div>
+
 
   );
 };

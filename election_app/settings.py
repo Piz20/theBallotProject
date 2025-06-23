@@ -89,7 +89,6 @@ MIDDLEWARE = [
 
 
 
-
 ROOT_URLCONF = 'election_app.urls'
 
 TEMPLATES = [
