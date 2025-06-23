@@ -20,10 +20,10 @@ export  interface Candidate {
   election?: Election ;      // nullable, objet Election complet
   name?: string ;
   description?: string ;
-  vote_count?: number;
+  voteCount?: number;
   imageFile?: string | null ; // nom du fichier image, nullable
   imageUrl?: string | null; // URL de l'image, nullable
-  created_at?: string ;      // date ISO en string, nullable
+  createdAt?: string ;      // date ISO en string, nullable
 }
 // ====================
 // Interfaces Élection

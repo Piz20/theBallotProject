@@ -29,8 +29,8 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
   });
 
   const freshCandidate = candidatesData?.candidatesByElection?.find((c: Candidate) => c.id === candidate.id) || candidate;
-  const voteCount = freshCandidate.vote_count || freshCandidate.voteCount || 0;
-  const percentage = totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0;
+  const voteCount = freshCandidate.voteCount || 0;
+  const percentage = totalVotes > 0 ? (freshCandidate.voteCount / totalVotes) * 100 : 0;
 
   const allCandidates = candidatesData?.candidatesByElection || [candidate];
   const sortedCandidates = [...allCandidates].sort((a, b) => {
@@ -45,41 +45,40 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
       onVote(candidate.id);
     }
   };
-
   const getButtonState = () => {
-    if (!canVote) return { 
-      text: 'Vote fermé', 
-      disabled: true, 
-      style: 'bg-gray-400 cursor-not-allowed', 
-      icon: Vote 
+    if (!canVote) return {
+      text: 'Voting closed',
+      disabled: true,
+      style: 'bg-gray-400 cursor-not-allowed',
+      icon: Vote
     };
-    
-    if (isVoting) return { 
-      text: 'Vote en cours...', 
-      disabled: true, 
-      style: 'bg-blue-500', 
-      icon: Loader2 
+
+    if (isVoting) return {
+      text: 'Voting in progress...',
+      disabled: true,
+      style: 'bg-blue-500',
+      icon: Loader2
     };
-    
-    if (hasVoted && isSelected) return { 
-      text: 'Changer de vote', 
-      disabled: false, 
-      style: 'bg-orange-500 hover:bg-orange-600', 
-      icon: RefreshCw 
+
+    if (hasVoted && isSelected) return {
+      text: 'Change vote',
+      disabled: false,
+      style: 'bg-orange-500 hover:bg-orange-600',
+      icon: RefreshCw
     };
-    
-    if (hasVoted && !isSelected) return { 
-      text: 'Voter pour ce candidat', 
-      disabled: false, 
-      style: 'bg-blue-600 hover:bg-blue-700', 
-      icon: Vote 
+
+    if (hasVoted && !isSelected) return {
+      text: 'Vote for this candidate',
+      disabled: false,
+      style: 'bg-blue-600 hover:bg-blue-700',
+      icon: Vote
     };
-    
-    return { 
-      text: 'Voter maintenant', 
-      disabled: false, 
-      style: 'bg-green-600 hover:bg-green-700', 
-      icon: Vote 
+
+    return {
+      text: 'Vote now',
+      disabled: false,
+      style: 'bg-green-600 hover:bg-green-700',
+      icon: Vote
     };
   };
 
@@ -107,36 +106,35 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
   const positionBadge = getPositionBadge();
 
   return (
-    <div className={`bg-white rounded-lg p-6 border transition-all duration-300 shadow-sm hover:shadow-md ${
-      isSelected ? 'border-green-400 bg-green-50' : 'border-gray-200'
-    } ${isVoting ? 'scale-[1.02]' : ''}`}>
-      
-      {/* Badge de sélection */}
+    <div className={`bg-white rounded-lg p-6 border transition-all duration-300 shadow-sm hover:shadow-md ${isSelected ? 'border-green-400 bg-green-50' : 'border-gray-200'
+      } ${isVoting ? 'scale-[1.02]' : ''}`}>
+
+      {/* Selection badge */}
       {isSelected && (
         <div className="absolute -top-2 -right-2 bg-green-500 text-white p-2 rounded-full shadow-lg">
           <CheckCircle className="w-4 h-4" />
         </div>
       )}
 
-      {/* Overlay de vote en cours */}
+      {/* Voting overlay in progress */}
       {isVoting && (
         <div className="absolute inset-0 bg-blue-50/90 rounded-lg flex items-center justify-center z-10">
           <div className="bg-white rounded-lg p-6 shadow-lg text-center">
             <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
             <h3 className="text-lg font-bold text-blue-600 mb-1">
-              {hasVoted ? 'Modification en cours...' : 'Enregistrement du vote...'}
+              {hasVoted ? 'Modification in progress...' : 'Recording your vote...'}
             </h3>
-            <p className="text-gray-600 text-sm">Veuillez patienter</p>
+            <p className="text-gray-600 text-sm">Please wait</p>
           </div>
         </div>
       )}
 
       <div className="flex items-center space-x-6">
-        {/* Photo du candidat */}
+        {/* Candidate photo */}
         <div className="flex-shrink-0">
           {freshCandidate.imageUrl ? (
-            <img 
-              src={freshCandidate.imageUrl} 
+            <img
+              src={freshCandidate.imageUrl}
               alt={freshCandidate.name}
               className="w-20 h-20 rounded-lg object-cover border-2 border-gray-200"
             />
@@ -147,7 +145,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
           )}
         </div>
 
-        {/* Informations du candidat */}
+        {/* Candidate information */}
         <div className="flex-1">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -159,50 +157,49 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
                   {positionBadge.text}
                 </span>
               </div>
-              
+
               <p className="text-gray-600 mb-4 text-sm">
-                {freshCandidate.description || 'Candidat engagé pour le changement.'}
+                {freshCandidate.description || 'Candidate committed to change.'}
               </p>
-              
-              {/* Statistiques */}
+
+              {/* Statistics */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-blue-50 rounded-lg p-3 text-center">
                   <div className="text-lg font-bold text-blue-600">{voteCount}</div>
                   <div className="text-blue-500 text-xs font-medium">Votes</div>
                 </div>
-                
+
                 <div className="bg-green-50 rounded-lg p-3 text-center">
                   <div className="text-lg font-bold text-green-600">{percentage.toFixed(1)}%</div>
-                  <div className="text-green-500 text-xs font-medium">Part</div>
+                  <div className="text-green-500 text-xs font-medium">Share</div>
                 </div>
               </div>
             </div>
 
-            {/* Section vote */}
+            {/* Voting section */}
             <div className="flex flex-col items-end space-y-4 ml-6">
               <button
                 onClick={handleVoteClick}
                 disabled={buttonState.disabled}
-                className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-300 flex items-center space-x-2 ${buttonState.style} ${
-                  !buttonState.disabled ? 'transform hover:scale-105' : 'cursor-not-allowed opacity-75'
-                }`}
+                className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-300 flex items-center space-x-2 ${buttonState.style} ${!buttonState.disabled ? 'transform hover:scale-105' : 'cursor-not-allowed opacity-75'
+                  }`}
               >
                 <ButtonIcon className={`w-4 h-4 ${isVoting ? 'animate-spin' : ''}`} />
                 <span>{buttonState.text}</span>
               </button>
 
-              {/* Barre de progression */}
+              {/* Progress bar */}
               <div className="w-32">
                 <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full transition-all duration-1000"
                     style={{ width: `${Math.max(percentage, 2)}%` }}
                   />
                 </div>
-                
+
                 <div className="text-center mt-2">
                   <span className="text-lg font-bold text-gray-900">{percentage.toFixed(1)}%</span>
-                  <p className="text-gray-500 text-xs">des voix</p>
+                  <p className="text-gray-500 text-xs">of votes</p>
                 </div>
               </div>
             </div>
@@ -210,6 +207,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
         </div>
       </div>
     </div>
+
   );
 };
 

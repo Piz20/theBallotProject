@@ -12,7 +12,7 @@ interface ResultsChartProps {
 }
 
 const WinnerBanner: React.FC<{ winner: Candidate; totalVotes: number }> = ({ winner, totalVotes }) => {
-  const voteCount = winner.vote_count || 0;
+  const voteCount = winner.voteCount || 0;
   const percentage = useMemo(
     () => (totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0),
     [voteCount, totalVotes]
@@ -56,7 +56,7 @@ interface CandidateBarProps {
 }
 
 const CandidateBar: React.FC<CandidateBarProps> = ({ candidate, totalVotes, index }) => {
-  const voteCount = candidate.vote_count || 0;
+  const voteCount = candidate.voteCount || 0;
   const percentage = useMemo(
     () => (totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0),
     [voteCount, totalVotes]
@@ -208,7 +208,7 @@ const ResultsChart: React.FC<ResultsChartProps> = ({ electionId, isElectionEnded
     });
 
     const total: number = candidates.reduce((sum: number, candidate: Candidate) => {
-      const voteCount: number = candidate.vote_count || 0;
+      const voteCount: number = candidate.voteCount || 0;
       return sum + voteCount;
     }, 0);
 

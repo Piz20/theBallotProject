@@ -10,7 +10,7 @@ interface AIAnalysisProps {
 
 const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
 
-  
+
   const { data: candidatesData } = useQuery(GET_CANDIDATES_BY_ELECTION_ID, {
     variables: {
       electionId: candidates.length
@@ -95,19 +95,19 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
             <Brain className="w-6 h-6 text-purple-600" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Analyse IA</h3>
-            <p className="text-gray-600 text-sm">Prédictions en temps réel</p>
+            <h3 className="text-xl font-bold text-gray-900">AI Analysis</h3>
+            <p className="text-gray-600 text-sm">Real-time predictions</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200">
           <Activity className="w-4 h-4" />
-          <span className="font-medium text-sm">IA Active</span>
+          <span className="font-medium text-sm">AI Active</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Prédiction Principale */}
+        {/* Main Prediction */}
         <div className="lg:col-span-2 bg-purple-50 rounded-lg p-6 border border-purple-200">
           <div className="flex items-start space-x-4">
             <div className="p-3 bg-purple-500 rounded-lg">
@@ -115,17 +115,17 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
             </div>
 
             <div className="flex-1">
-              <h4 className="font-bold text-gray-900 mb-3 text-lg">Prédiction Avancée</h4>
+              <h4 className="font-bold text-gray-900 mb-3 text-lg">Advanced Prediction</h4>
 
               <p className="text-gray-700 mb-4">
-                <span className="font-bold text-purple-600">{insights.leader.name}</span> domine
-                avec <span className="font-bold text-lg text-purple-700">{getVotePercentage(leaderVotes)}%</span> des voix
+                <span className="font-bold text-purple-600">{insights.leader.name}</span> leads
+                with <span className="font-bold text-lg text-purple-700">{getVotePercentage(leaderVotes)}%</span> of the votes
               </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg p-4 border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-700 text-sm">Probabilité de victoire</span>
+                    <span className="font-medium text-gray-700 text-sm">Winning Probability</span>
                     <span className="text-lg font-bold text-purple-600">{insights.winProbability.toFixed(0)}%</span>
                   </div>
                   <div className="w-full bg-purple-200 rounded-full h-2">
@@ -138,26 +138,26 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
 
                 <div className="bg-white rounded-lg p-4 border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-700 text-sm">Confiance</span>
+                    <span className="font-medium text-gray-700 text-sm">Confidence</span>
                     <span className="text-lg font-bold text-indigo-600">{insights.confidence}%</span>
                   </div>
-                  <p className="text-gray-600 text-xs">Niveau de certitude</p>
+                  <p className="text-gray-600 text-xs">Level of certainty</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Métriques */}
+        {/* Metrics */}
         <div className="space-y-4">
           <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
             <div className="flex items-center space-x-3 mb-3">
               <TrendingUp className="w-5 h-5 text-blue-600" />
-              <h5 className="font-bold text-gray-900">Tendance</h5>
+              <h5 className="font-bold text-gray-900">Trend</h5>
             </div>
             <div>
               <p className="text-blue-700 font-bold">{insights.competitiveness}</p>
-              <p className="text-gray-600 text-sm">Course {insights.competitiveness.toLowerCase()}</p>
+              <p className="text-gray-600 text-sm">Race is {insights.competitiveness.toLowerCase()}</p>
             </div>
           </div>
 
@@ -168,7 +168,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
             </div>
             <div>
               <p className="text-green-700 font-bold">
-                {freshTotalVotes > 100 ? 'Forte' : freshTotalVotes > 50 ? 'Modérée' : 'Faible'}
+                {freshTotalVotes > 100 ? 'High' : freshTotalVotes > 50 ? 'Moderate' : 'Low'}
               </p>
               <p className="text-gray-600 text-sm">{freshTotalVotes} votes</p>
             </div>
@@ -181,13 +181,13 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
             </div>
             <div>
               <p className="text-amber-700 font-bold">{insights.dominance}%</p>
-              <p className="text-gray-600 text-sm">Score du leader</p>
+              <p className="text-gray-600 text-sm">Leader's score</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Insights détaillés */}
+      {/* Detailed Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
           <div className="flex items-start space-x-3">
@@ -195,10 +195,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
             <div>
               <h5 className="font-bold text-gray-900 mb-2">Momentum</h5>
               <p className="text-gray-700 text-sm">
-                {insights.isCloseRace ?
-                  'La course reste très ouverte. Chaque vote compte.' :
-                  `${insights.leader.name} consolide son avance.`
-                }
+                {insights.isCloseRace
+                  ? 'The race remains very close. Every vote counts.'
+                  : `${insights.leader.name} is consolidating their lead.`}
               </p>
             </div>
           </div>
@@ -210,15 +209,15 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
             <div>
               <h5 className="font-bold text-gray-900 mb-2">Projection</h5>
               <p className="text-gray-700 text-sm">
-                Confiance de <span className="font-bold text-pink-600">{insights.confidence}%</span>
-                basée sur les tendances actuelles.
+                Confidence of <span className="font-bold text-pink-600">{insights.confidence}%</span>
+                based on current trends.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Indicateur IA */}
+      {/* AI Indicator */}
       <div className="mt-6 pt-4 border-t border-gray-200 text-center">
         <div className="inline-flex items-center space-x-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-lg border border-purple-200">
           <div className="flex space-x-1">
@@ -227,10 +226,11 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ candidates, totalVotes }) => {
             <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse delay-300"></div>
           </div>
           <Brain className="w-4 h-4" />
-          <span className="font-medium text-sm">IA en analyse continue</span>
+          <span className="font-medium text-sm">AI continuously analyzing</span>
         </div>
       </div>
     </div>
+
   );
 };
 

@@ -115,7 +115,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'electionapp',
-        'HOST': 'localhost\\SQLEXPRESS03',
+        'HOST': 'localhost\\SQLEXPRESS01',
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'TrustServerCertificate': 'yes',
@@ -125,19 +125,6 @@ DATABASES = {
     }
 }
 
-"""DATABASES = {
-    'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'electionapp',
-        'HOST': 'localhost\\SQLEXPRESS01',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'TrustServerCertificate': 'yes',
-            'Encrypt': 'no',
-            'trusted_connection': 'yes',
-        },
-    }
-}"""
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

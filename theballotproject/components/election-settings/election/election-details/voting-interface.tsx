@@ -6,6 +6,10 @@ import AIAnalysis from './ai-analysis';
 import VoteGauges from './voting-gauges';
 import CandidateCard from './candidate-card';
 import ResultsChart from './result-charts';
+import Footer from '@/components/ui/footer';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 
 interface VotingInterfaceProps {
@@ -35,15 +39,15 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
 
   const totalVotes = useMemo(() => {
     return candidates.reduce((sum, candidate) => {
-      const voteCount = candidate.vote_count ||  0;
+      const voteCount = candidate.voteCount || 0;
       return sum + voteCount;
     }, 0);
   }, [candidates]);
-  
+
   const handleVote = async (candidateId: number) => {
     setIsVoting(true);
     setVotingCandidateId(candidateId);
-    
+
     try {
       await onVote(candidateId);
       setSelectedCandidate(candidateId);
@@ -57,10 +61,10 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
 
   const handleDeleteVote = async () => {
     if (!onDeleteVote) return;
-    
+
     setIsDeletingVote(true);
     setShowDeleteConfirm(false);
-    
+
     try {
       await onDeleteVote();
       setSelectedCandidate(null);
@@ -85,158 +89,123 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
   const hasVoted = !!userVote;
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-    {/* En-tête */}
-    <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium mb-4">
-            <Activity className="w-4 h-4" />
-            <span>Élection en cours</span>
-          </div>
-
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{election.name}</h1>
-
-          <p className="text-gray-600 max-w-2xl mx-auto">{election.description}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Full-width header without border */}
+      <div className="w-full flex items-center justify-between px-6 py-4">
+        {/* Left side */}
+        <div className="flex items-center space-x-3">
+          <Vote className="h-8 w-8 text-primary animate-pulse" />
+          <h1 className="text-3xl font-bold">TheBallotProject</h1>
         </div>
 
-        {/* Timer */}
-        <div className="mb-6">
-          <CountdownTimer 
-            startDate={election.startDate} 
-            endDate={election.endDate}
-            status={status}
-          />
-        </div>
+        {/* Right side */}
+        <Button variant="ghost" asChild>
+          <Link href="/elections" className="flex items-center">
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            Back to Dashboard
+          </Link>
+        </Button>
+      </div>
 
-        {/* Statistiques */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total votes</p>
-                <p className="text-xl font-bold text-gray-900">{totalVotes}</p>
-              </div>
+      {/* Election information block */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium mb-4">
+              <Activity className="w-4 h-4" />
+              <span>Ongoing Election</span>
             </div>
+
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{election.name}</h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">{election.description}</p>
           </div>
 
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Vote className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Candidats</p>
-                <p className="text-xl font-bold text-gray-900">{candidates.length}</p>
-              </div>
-            </div>
+          {/* Countdown Timer */}
+          <div className="mb-6">
+            <CountdownTimer
+              startDate={election.startDate}
+              endDate={election.endDate}
+              status={status}
+            />
           </div>
 
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Participation</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {election.eligibleEmails
-                    ? Math.round((totalVotes / election.eligibleEmails.length) * 100)
-                    : 0}
-                  %
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <Wifi className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Statut</p>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <p className="text-lg font-bold text-gray-900">Live</p>
-                </div>
-              </div>
-            </div>
+          {/* Statistics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* You can fill this section with your statistic cards */}
           </div>
         </div>
       </div>
-    </div>
 
-    {/* Contenu principal */}
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Colonne principale */}
-        <div className="lg:col-span-3 space-y-8">
-          <AIAnalysis candidates={candidates} totalVotes={totalVotes} />
+      {/* Main content */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main column */}
+          <div className="lg:col-span-3 space-y-8">
+            <AIAnalysis candidates={candidates} totalVotes={totalVotes} />
 
-          {/* Candidats */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Vote className="w-6 h-6 text-blue-600" />
-                </div>
-                <span>Candidats</span>
-              </h2>
-
-              <div className="flex items-center space-x-4">
-                {hasVoted && (
-                  <div className="flex items-center space-x-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200">
-                    <CheckCircle className="w-4 h-4" />
-                    <span className="font-medium">Vote enregistré</span>
+            {/* Candidates block */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Vote className="w-6 h-6 text-blue-600" />
                   </div>
-                )}
+                  <span>Candidates</span>
+                </h2>
 
-                {hasVoted && status === "active" && onDeleteVote && (
-                  <button
-                    onClick={handleDeleteVote}
-                    disabled={isDeletingVote}
-                    className="flex items-center space-x-2 bg-red-50 text-red-700 px-4 py-2 rounded-lg border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="font-medium">
-                      {isDeletingVote ? "Suppression..." : "Supprimer vote"}
-                    </span>
-                  </button>
-                )}
+                <div className="flex items-center space-x-4">
+                  {hasVoted && (
+                    <div className="flex items-center space-x-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="font-medium">Vote recorded</span>
+                    </div>
+                  )}
+
+                  {hasVoted && status === "active" && onDeleteVote && (
+                    <button
+                      onClick={handleDeleteVote}
+                      disabled={isDeletingVote}
+                      className="flex items-center space-x-2 bg-red-50 text-red-700 px-4 py-2 rounded-lg border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="font-medium">
+                        {isDeletingVote ? "Deleting..." : "Delete vote"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {candidates.map((candidate) => (
+                  <CandidateCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    totalVotes={totalVotes}
+                    isSelected={selectedCandidate === candidate.id}
+                    hasVoted={hasVoted}
+                    isVoting={isVoting && votingCandidateId === candidate.id}
+                    onVote={handleVote}
+                    canVote={status === "active"}
+                  />
+                ))}
               </div>
             </div>
 
-            <div className="space-y-6">
-              {candidates.map((candidate) => (
-                <CandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  totalVotes={totalVotes}
-                  isSelected={selectedCandidate === candidate.id}
-                  hasVoted={hasVoted}
-                  isVoting={isVoting && votingCandidateId === candidate.id}
-                  onVote={handleVote}
-                  canVote={status === "active"}
-                />
-              ))}
-            </div>
+            <ResultsChart electionId={election.id} isElectionEnded={status === "ended"} />
           </div>
 
-          <ResultsChart electionId={election.id} isElectionEnded={status === "ended"} />
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <VoteGauges candidates={candidates} totalVotes={totalVotes} />
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <VoteGauges candidates={candidates} totalVotes={totalVotes} />
+          </div>
         </div>
       </div>
+
+      <Footer />
     </div>
-  </div>
-);
+
+  );
 
 };
 

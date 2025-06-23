@@ -48,32 +48,31 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ startDate, endDate, sta
 
     return () => clearInterval(timer);
   }, [startDate, endDate, status]);
-
   const getStatusConfig = () => {
     switch (status) {
       case 'upcoming':
         return {
           icon: Timer,
-          title: 'Ouverture dans',
+          title: 'Opening in',
           bgColor: 'from-amber-500 to-orange-500',
           textColor: 'text-white',
-          description: 'Préparez-vous !'
+          description: 'Get ready!'
         };
       case 'active':
         return {
           icon: Activity,
-          title: 'Temps restant',
+          title: 'Time left',
           bgColor: 'from-blue-500 to-indigo-600',
           textColor: 'text-white',
-          description: 'Votez maintenant !'
+          description: 'Vote now!'
         };
       case 'ended':
         return {
           icon: CheckCircle,
-          title: 'Élection terminée',
+          title: 'Election ended',
           bgColor: 'from-gray-600 to-gray-700',
           textColor: 'text-white',
-          description: 'Résultats disponibles'
+          description: 'Results available'
         };
     }
   };
@@ -108,13 +107,13 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ startDate, endDate, sta
         </div>
       </div>
 
-      {/* Compteur */}
+      {/* Countdown */}
       <div className="grid grid-cols-4 gap-4 max-w-md mx-auto mb-4">
         {[
-          { label: 'Jours', value: timeLeft.days },
-          { label: 'Heures', value: timeLeft.hours },
+          { label: 'Days', value: timeLeft.days },
+          { label: 'Hours', value: timeLeft.hours },
           { label: 'Minutes', value: timeLeft.minutes },
-          { label: 'Secondes', value: timeLeft.seconds }
+          { label: 'Seconds', value: timeLeft.seconds }
         ].map((item, index) => (
           <div key={index} className="bg-white/20 rounded-lg p-3 border border-white/30">
             <div className="text-2xl font-bold text-white mb-1">
@@ -127,11 +126,11 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ startDate, endDate, sta
         ))}
       </div>
 
-      {/* Indicateurs */}
+      {/* Indicators */}
       <div className="flex items-center justify-center space-x-4">
         <div className="flex items-center space-x-2 bg-white/20 px-3 py-2 rounded-lg border border-white/30">
           <Activity className="w-4 h-4 text-white" />
-          <span className="text-white font-medium text-sm">Temps réel</span>
+          <span className="text-white font-medium text-sm">Real time</span>
         </div>
 
         <div className="flex items-center space-x-2 bg-white/20 px-3 py-2 rounded-lg border border-white/30">
@@ -140,11 +139,12 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ startDate, endDate, sta
             <div className="w-1 h-1 bg-white rounded-full animate-pulse delay-150"></div>
             <div className="w-1 h-1 bg-white rounded-full animate-pulse delay-300"></div>
           </div>
-          <span className="text-white font-medium text-sm">Synchronisé</span>
+          <span className="text-white font-medium text-sm">Synchronized</span>
         </div>
       </div>
     </div>
   );
+
 };
 
 export default CountdownTimer;

@@ -81,7 +81,7 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 border shadow-sm sticky top-6">
+    <div className="bg-white rounded-lg p-6 border shadow-sm sticky top-6 max-w-xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -89,8 +89,8 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
             <BarChart3 className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Classement Live</h3>
-            <p className="text-gray-600 text-sm">Temps réel</p>
+            <h3 className="text-lg font-bold text-gray-900">Live Ranking</h3>
+            <p className="text-gray-600 text-sm">Real time</p>
           </div>
         </div>
 
@@ -100,6 +100,7 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
         </div>
       </div>
 
+
       <div className="space-y-6">
         {sortedCandidates.map((candidate, index) => {
           const voteCount = candidate.vote_count || candidate.voteCount || 0;
@@ -108,15 +109,15 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
           const badge = getPositionBadge(index);
 
           return (
-            <div key={candidate.id} className="bg-gray-50 rounded-lg p-4 border">
+            <div key={candidate.id} className="bg-gray-50 rounded-xl p-4 border shadow-sm w-fit max-w-full">
               {/* Header du candidat */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between mb-4 w-full">
+                <div className="flex items-center space-x-3 min-w-fit">
                   <div className="p-2 bg-white rounded-lg shadow-sm">
                     <PositionIcon className="w-4 h-4 text-gray-600" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-sm">
+                    <h4 className="font-bold text-gray-900 text-sm whitespace-nowrap">
                       {candidate.name}
                     </h4>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${badge.style}`}>
@@ -125,7 +126,7 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right min-w-fit">
                   <div className="text-lg font-bold text-gray-900">
                     {percentage.toFixed(1)}%
                   </div>
@@ -136,8 +137,8 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
               </div>
 
               {/* Barre de progression */}
-              <div className="mb-4">
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div className="mb-4 w-fit min-w-[120px]">
+                <div className="bg-gray-200 rounded-full h-3 overflow-hidden min-w-[100px]">
                   <div
                     className={`h-full bg-gradient-to-r ${getGaugeColor(index)} rounded-full transition-all duration-1000`}
                     style={{ width: `${Math.max(percentage, 2)}%` }}
@@ -146,38 +147,39 @@ const VoteGauges: React.FC<VoteGaugesProps> = ({ candidates, totalVotes }) => {
               </div>
 
               {/* Statistiques */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-white rounded p-2 text-center border">
+              <div className="flex gap-3 flex-wrap">
+                <div className="bg-white rounded p-2 text-center border min-w-fit">
                   <div className="text-sm font-bold text-blue-600">{voteCount}</div>
                   <div className="text-xs text-blue-500">Votes</div>
                 </div>
 
-                <div className="bg-white rounded p-2 text-center border">
+                <div className="bg-white rounded p-2 text-center border min-w-fit">
                   <div className="text-sm font-bold text-green-600">{percentage.toFixed(1)}%</div>
                   <div className="text-xs text-green-500">Part</div>
                 </div>
 
-                <div className="bg-white rounded p-2 text-center border">
+                <div className="bg-white rounded p-2 text-center border min-w-fit">
                   <div className="text-sm font-bold text-purple-600">#{index + 1}</div>
                   <div className="text-xs text-purple-500">Rang</div>
                 </div>
               </div>
 
               {/* Tendance */}
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+              <div className="mt-3 flex items-center justify-between w-full">
+                <div className="flex items-center space-x-2 min-w-fit">
                   <TrendingUp className="w-3 h-3 text-green-500" />
                   <span className="text-xs text-gray-600">
                     {index === 0 ? 'En tête' : index === 1 ? 'Challenger' : 'En course'}
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 min-w-fit">
                   <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-xs text-gray-500">Live</span>
                 </div>
               </div>
             </div>
+
           );
         })}
       </div>
