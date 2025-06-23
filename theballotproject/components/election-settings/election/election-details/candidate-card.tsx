@@ -22,10 +22,16 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
   onVote,
   canVote
 }) => {
+  
+  const rawElectionId = candidate.election?.id;
+  const electionId = rawElectionId && !isNaN(parseInt(String(rawElectionId), 10))
+    ? parseInt(String(rawElectionId), 10)
+    : 1;
+
   const { data: candidatesData } = useQuery(GET_CANDIDATES_BY_ELECTION_ID, {
-    variables: { electionId: candidate.election?.id || 1 },
+    variables: { electionId },
     pollInterval: 2000,
-    skip: !candidate.election?.id
+    skip: !rawElectionId,
   });
 
   const freshCandidate = candidatesData?.candidatesByElection?.find((c: Candidate) => c.id === candidate.id) || candidate;

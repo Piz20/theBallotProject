@@ -64,7 +64,7 @@ const now = new Date();
 
 const mapElectionData = (apiData: any[]): Election[] => {
   return apiData.map((item) => {
-    console.log(item.imageFile, item.status);
+    console.log(item.startDate, item.enDate);
     return {
       id: item.id,
       name: item.name,
