@@ -64,7 +64,6 @@ const now = new Date();
 
 const mapElectionData = (apiData: any[]): Election[] => {
   return apiData.map((item) => {
-    console.log(item.startDate, item.enDate);
     return {
       id: item.id,
       name: item.name,
@@ -76,7 +75,7 @@ const mapElectionData = (apiData: any[]): Election[] => {
         item.status,
       imageUrl: item.imageUrl,
       imageFile: item.imageFile,
-      eligibleVoters: item.eligibleVoters || 0
+      eligibleEmails: item.eligibleEmails || 0
     };
   });
 };

@@ -4,15 +4,19 @@ from ...models import Election, CustomUser, Candidate, EligibleEmail
 from .utils import check_authentication
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from django.core.validators import MaxLengthValidator, URLValidator, EmailValidator
-from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 import base64
 
 
 class ElectionType(DjangoObjectType):
     eligible_emails = graphene.List(graphene.String, name='eligibleEmails')
-    
+    image_file = graphene.String(name="imageFile")
+    image_url = graphene.String(name="imageUrl")
+    start_date = graphene.DateTime(name="startDate")
+    end_date = graphene.DateTime(name="endDate")
+    created_at = graphene.DateTime(name="createdAt")
+    updated_at = graphene.DateTime(name="updatedAt")
+
     class Meta:
         model = Election
         fields = '__all__'
@@ -22,18 +26,36 @@ class ElectionType(DjangoObjectType):
             return list(self.eligible_emails.values_list('email', flat=True))
         return []
 
+    def resolve_image_file(self, info):
+        return self.image_file
+
+    def resolve_image_url(self, info):
+        return self.image_url
+
+    def resolve_start_date(self, info):
+        return self.start_date
+
+    def resolve_end_date(self, info):
+        return self.end_date
+
+    def resolve_created_at(self, info):
+        return self.created_at
+
+    def resolve_updated_at(self, info):
+        return self.updated_at
+
 
 class UpdateElection(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
         name = graphene.String()
         description = graphene.String()
-        start_date = graphene.DateTime()
-        end_date = graphene.DateTime()
+        start_date = graphene.DateTime(name="startDate")
+        end_date = graphene.DateTime(name="endDate")
         status = graphene.String()
-        image_file = graphene.String()
-        image_url = graphene.String()
-        eligible_emails = graphene.List(graphene.String)
+        image_file = graphene.String(name="imageFile")
+        image_url = graphene.String(name="imageUrl")
+        eligible_emails = graphene.List(graphene.String, name="eligibleEmails")
 
     success = graphene.Boolean()
     message = graphene.String()
@@ -55,13 +77,13 @@ class UpdateElection(graphene.Mutation):
                     return UpdateElection(success=False, message="Une autre élection porte déjà ce nom.")
                 election.name = name
 
-            if description:
+            if description is not None:
                 election.description = description
-            if start_date:
+            if start_date is not None:
                 election.start_date = start_date
-            if end_date:
+            if end_date is not None:
                 election.end_date = end_date
-            if status:
+            if status is not None:
                 election.status = status
 
             if image_url and image_file:
@@ -96,16 +118,15 @@ class UpdateElection(graphene.Mutation):
             return UpdateElection(success=False, message=str(e))
 
 
-
 class CreateElection(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         description = graphene.String(required=True)
-        start_date = graphene.DateTime(required=False)
-        end_date = graphene.DateTime(required=False)
-        image_url = graphene.String(required=False)
-        image_file = graphene.String(required=False)
-        eligible_emails = graphene.List(graphene.String)
+        start_date = graphene.DateTime(name="startDate", required=False)
+        end_date = graphene.DateTime(name="endDate", required=False)
+        image_url = graphene.String(name="imageUrl", required=False)
+        image_file = graphene.String(name="imageFile", required=False)
+        eligible_emails = graphene.List(graphene.String, name="eligibleEmails")
 
     success = graphene.Boolean()
     message = graphene.String()
