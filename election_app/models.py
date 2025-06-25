@@ -70,8 +70,8 @@ class Election(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True, validators=[MaxLengthValidator(255)])
     description = models.TextField(max_length=1000, null=False, blank=False)
-    start_date = models.DateTimeField(validators=[validate_future_date], null=True, blank=True)
-    end_date = models.DateTimeField(validators=[validate_future_date], null=True, blank=True)
+    start_date = models.DateTimeField( null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
 
 
     created_at = models.DateTimeField(auto_now=True)
