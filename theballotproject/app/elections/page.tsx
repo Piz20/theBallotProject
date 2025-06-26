@@ -44,6 +44,9 @@ import { GET_ALL_ELECTIONS } from "@/lib/mutations/electionMutations";
 // Custom hooks and state management stores.
 import { useToastStore } from "@/hooks/useToastStore";
 
+import { AUTO_DASHBOARD_STATS_QUERY } from '@/lib/mutations/queryGeneratorMutations';
+import { useLazyQuery } from '@apollo/client';
+
 // UI notification components.
 import { Toaster } from "@/components/ui/toaster";
 
@@ -80,31 +83,44 @@ const mapElectionData = (apiData: any[]): Election[] => {
   });
 };
 
+interface Stat {
+  title: string;
+  value: number | string;
+  change?: string;
+}
+
+
 // Defines the ElectionPage component, responsible for displaying, filtering, and paginating elections, and handling user logout.
 export default function ElectionPage() {
-  // Fetches election data using Apollo Client.
+  // Hooks React et Apollo au tout début (toujours dans le même ordre)
   const { loading, error, data } = useQuery(GET_ALL_ELECTIONS);
 
-  // Manages component state: all elections, search term, filtered/displayed elections, pagination, and loading states.
+  const { data: statsData, loading: statsLoading, error: statsError } = useQuery(AUTO_DASHBOARD_STATS_QUERY, {
+    pollInterval: 2000, // fetch toutes les 2 secondes
+  });
+
   const [elections, setElections] = useState<Election[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredElections, setFilteredElections] = useState<Election[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false); // General loading state, e.g., for logout.
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initializes logout mutation, router, and toast notifications.
+  const [statsList, setStatsList] = useState<any[]>([]);
+
   const [logout] = useMutation(LOGOUT_USER);
   const router = useRouter();
   const { addToast } = useToastStore();
 
-  // Configuration for pagination.
-  const ITEMS_PER_PAGE = 6; // Number of items to display per page.
+  const ITEMS_PER_PAGE = 6;
   const totalPages = Math.ceil(filteredElections.length / ITEMS_PER_PAGE);
 
+  // Effets métier après les hooks
+  useEffect(() => {
+    if (statsData?.autoDashboardStats && Array.isArray(statsData.autoDashboardStats)) {
+      setStatsList(statsData.autoDashboardStats.slice(0, 3));
+    }
+  }, [statsData]);
 
-
-
-  // Processes fetched election data.
   useEffect(() => {
     if (!loading && data && data.allElections) {
       const mapped = mapElectionData(data.allElections);
@@ -114,14 +130,12 @@ export default function ElectionPage() {
     }
   }, [data, loading]);
 
-  // Filters elections based on search term.
   useEffect(() => {
     const filtered = searchTerm
       ? elections.filter(election =>
         election.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (election.description ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         election.status?.toLowerCase().includes(searchTerm.toLowerCase())
-
       )
       : elections;
 
@@ -129,25 +143,24 @@ export default function ElectionPage() {
     setCurrentPage(1);
   }, [searchTerm, elections]);
 
-  // Get current elections to display
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages || 1);
+    }
+  }, [totalPages]);
+
+  // Fonctions helpers et handlers (hors hook)
   const getCurrentElections = () => {
     const indexOfLastElection = currentPage * ITEMS_PER_PAGE;
     const indexOfFirstElection = indexOfLastElection - ITEMS_PER_PAGE;
     return filteredElections.slice(indexOfFirstElection, indexOfLastElection);
   };
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages || 1);
-    }
-  }, [totalPages]);
-  // Pagination controls
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       document.body.scrollTo({ top: 0, behavior: 'smooth' });
-
     }
   };
 
@@ -156,11 +169,9 @@ export default function ElectionPage() {
       setCurrentPage(currentPage - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       document.body.scrollTo({ top: 0, behavior: 'smooth' });
-
     }
   };
 
-  // Handles user logout.
   const handleLogout = async () => {
     setIsLoading(true);
     try {
@@ -290,52 +301,20 @@ export default function ElectionPage() {
 
           {/* Statistics cards section (Active Elections, Total Participants, Participation Rate). */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Card for Active Elections */}
-            <Card className="bg-primary/10">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Élections actives {/* Active Elections */}
-                </CardTitle>
-                <Vote className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">3</div>
-                <p className="text-xs text-muted-foreground">
-                  +2 ce mois {/* +2 this month */}
-                </p>
-              </CardContent>
-            </Card>
-            {/* Card for Total Participants */}
-            <Card className="bg-primary/10">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Participants totaux {/* Total Participants */}
-                </CardTitle>
-                <Users className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">234</div>
-                <p className="text-xs text-muted-foreground">
-                  +18% vs mois dernier {/* +18% vs last month */}
-                </p>
-              </CardContent>
-            </Card>
-            {/* Card for Participation Rate */}
-            <Card className="bg-primary/10">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Taux de participation {/* Participation Rate */}
-                </CardTitle>
-                <BarChart3 className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">78%</div>
-                <p className="text-xs text-muted-foreground">
-                  +12% vs dernière élection {/* +12% vs last election */}
-                </p>
-              </CardContent>
-            </Card>
+            {statsList.map((stat, index) => (
+              <Card key={index} className="bg-primary/10">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">{stat.change}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+
+
           {/* Toaster component for displaying notifications. */}
           <Toaster />
           {/* Search bar for filtering elections. */}

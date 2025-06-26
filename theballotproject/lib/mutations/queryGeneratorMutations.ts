@@ -1,5 +1,3 @@
-// lib/queries/aiQueries.ts
-
 import { gql } from '@apollo/client';
 
 export const RUN_AI_QUERY = gql`
@@ -32,3 +30,12 @@ export const VOTER_SEARCH_QUERY = gql`
   }
 `;
 
+/**
+ * GraphQL query pour récupérer automatiquement des statistiques clés pour le tableau de bord.
+ * Le champ 'autoDashboardStats' correspond à `resolve_auto_dashboard_stats` dans votre schéma Graphene.
+ */
+export const AUTO_DASHBOARD_STATS_QUERY = gql`
+  query AutoDashboardStats {
+    autoDashboardStats
+  }
+`;

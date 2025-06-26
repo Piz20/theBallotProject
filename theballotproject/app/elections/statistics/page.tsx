@@ -61,8 +61,8 @@ export default function StatisticsPage() {
     setAbortController(controller);
 
     const promptWithChart = includeChart
-      ? `${query.trim()} (inclure des graphiques)`
-      : `${query.trim()} (ne pas inclure de graphiques)`;
+      ? `${query.trim()} mais des graphqiques`
+      : `${query.trim()} je e veux pas de graphiques`;
 
     getGraphData({
       variables: { prompt: promptWithChart },

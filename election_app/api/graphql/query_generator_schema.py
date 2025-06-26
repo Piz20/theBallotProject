@@ -9,6 +9,7 @@ from election_app.api.graphql.utils import reformat_result
 from google import genai
 from graphene.types.generic import GenericScalar
 from sqlalchemy import create_engine, text
+import decimal
 
 # Load environment variables
 load_dotenv()
@@ -91,33 +92,35 @@ def generate_sql_query(prompt):
     return response.text.strip().replace("```sql", "").replace("```", "").strip()
 
 # Fonction pour récupérer les données réelles à partir de la base de données (MODIFIED)
-def get_data_from_db(sql_query): # Now accepts the SQL query directly
+def get_data_from_db(sql_query):
     try:
         with engine.connect() as connection:
             result = connection.execute(text(sql_query))
             df = pd.DataFrame(result.fetchall(), columns=result.keys())
 
-        # --- REVISED FIX FOR JSON SERIALIZATION ---
-        # Convert any datetime/date columns to ISO 8601 string format
+        # Conversion pour sérialisation JSON
         for col in df.columns:
             if pd.api.types.is_datetime64_any_dtype(df[col]):
-                df[col] = df[col].apply(lambda x: 
-                    x.isoformat(timespec='milliseconds') if pd.notna(x) and isinstance(x, datetime.datetime) else # For datetime objects
-                    x.isoformat() if pd.notna(x) and isinstance(x, datetime.date) else # For date objects
+                df[col] = df[col].apply(lambda x:
+                    x.isoformat(timespec='milliseconds') if pd.notna(x) and isinstance(x, datetime.datetime) else
+                    x.isoformat() if pd.notna(x) and isinstance(x, datetime.date) else
                     None
                 )
             elif pd.api.types.is_object_dtype(df[col]):
-                df[col] = df[col].apply(lambda x: 
-                    x.isoformat(timespec='milliseconds') if hasattr(x, 'isoformat') and isinstance(x, datetime.datetime) and pd.notna(x) else 
-                    x.isoformat() if hasattr(x, 'isoformat') and isinstance(x, datetime.date) and pd.notna(x) else 
+                df[col] = df[col].apply(lambda x:
+                    x.isoformat(timespec='milliseconds') if hasattr(x, 'isoformat') and isinstance(x, datetime.datetime) and pd.notna(x) else
+                    x.isoformat() if hasattr(x, 'isoformat') and isinstance(x, datetime.date) and pd.notna(x) else
+                    float(x) if isinstance(x, decimal.Decimal) else
                     x
                 )
-        # --- END REVISED FIX ---
+            elif pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
 
-        return df.to_dict(orient="records")  # Retourner les données sous forme de dictionnaire
+        return df.to_dict(orient="records")
+
     except Exception as e:
         raise Exception(f"Erreur lors de l'exécution de la requête SQL : {e}")
-
+    
 # Fonction pour générer le code D3.js
 def generate_d3_code(prompt, data):
     request = f"""
@@ -160,13 +163,53 @@ Ne fournis aucun commentaire, uniquement les données JSON strictes.
     # Appel à l'API Gemini pour générer le code D3.js avec les données réelles
     response = client.models.generate_content(model="gemini-2.0-flash", contents=request)
     return response.text.strip()
-    
+
+
+
+def generate_dashboard_stats():
+    prompt = f"""
+Voici le schéma de ma base de données :
+{schema_bd}
+
+Génère **une requête SQL Server unique** pour calculer 3 statistiques électorales clés pour un tableau de bord.
+Les statistiques doivent inclure :
+- "title" (ex : "Élections actives")
+- "value" (nombre ou pourcentage)
+- "change" (variation temporelle ex. "+2 ce mois", "+18% vs dernier mois")
+
+La requête doit retourner **exactement** ces trois lignes (une par statistique) sous forme d’un tableau :
+- Chaque ligne doit avoir : "title", "value", "change"
+
+Réponds uniquement avec la requête SQL.
+    """
+
+    try:
+        # Étape 1 : Génération de la requête SQL par Gemini
+        sql_query = generate_sql_query(prompt)
+
+        # Étape 2 : Exécution de la requête et récupération des données
+        results = get_data_from_db(sql_query)
+
+        # Étape 3 : Vérification de la structure
+        expected_keys = {"title", "value", "change"}
+        if all(isinstance(row, dict) and expected_keys.issubset(row.keys()) for row in results):
+            return results
+        else:
+            raise ValueError("Résultat inattendu : chaque ligne doit contenir 'title', 'value' et 'change'.")
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
+
+
 # Définition du Query GraphQL
 class Query(graphene.ObjectType):
     run = graphene.Field(GenericScalar, prompt=graphene.String(required=True))
     run_for_graphs = graphene.Field(graphene.String, prompt=graphene.String(required=True))
     voter_search = graphene.Field(GenericScalar, prompt=graphene.String(required=True)) # GraphQL field name
-    
+    auto_dashboard_stats = graphene.Field(GenericScalar)
+
     def resolve_run(self, info, prompt):
         sql_query = generate_sql_query(prompt)
 
@@ -275,5 +318,8 @@ class Query(graphene.ObjectType):
                 "sql_query": sql_query,  # Include the generated SQL query even on error
                 "data": [] # Ensures 'data' is always a list on any critical error
             }
+    
+    def resolve_auto_dashboard_stats(self, info):
+        return generate_dashboard_stats()
 
 schema = graphene.Schema(query=Query)
