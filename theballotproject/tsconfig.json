@@ -1,5 +1,4 @@
 {
-  // "$schema": "https://json.schemastore.org/tsconfig", // Uncomment if schema becomes available
   "compilerOptions": {
     "target": "es5",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -22,6 +21,7 @@
     "paths": {
       "@/*": ["./*"]
     },
+    "typeRoots": ["./node_modules/@types", "./types"],
     "types": []
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

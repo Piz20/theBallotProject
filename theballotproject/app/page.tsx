@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { ME_QUERY } from "@/lib/mutations/userMutations";
+import Loader from "@/components/ui/loader";
 
 const HomePageRedirect: React.FC = () => {
   const router = useRouter();
@@ -26,7 +27,7 @@ const HomePageRedirect: React.FC = () => {
     }
   }, [loading, data, error, router]);
 
-  if (loading) return <div>Chargement...</div>;
+  if (loading) return <div><Loader/></div>;
 
   return null;
 };

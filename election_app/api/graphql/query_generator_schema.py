@@ -26,7 +26,7 @@ def initialize_genai_client(api_key):
 client = initialize_genai_client(GEMINI_API_KEY)
 
 # Connexion à SQL Server
-server = 'localhost\\SQLEXPRESS03'
+server = 'localhost\\SQLEXPRESS01'
 database = 'electionapp'
 connection_string = f"mssql+pyodbc://@{server}/{database}?trusted_connection=yes&driver=ODBC+Driver 17 for SQL Server"
 engine = create_engine(connection_string)
