@@ -4,18 +4,29 @@ from datetime import datetime, date
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from graphene_django.types import DjangoObjectType
-from .utils import check_authentication  # Importer la fonction de vérification d'authentification
+from .utils import check_authentication
 
-# Récupérer le modèle d'utilisateur
 CustomUser = get_user_model()
 
-# Type GraphQL pour l'utilisateur
 class UserType(DjangoObjectType):
+    # Alias camelCase pour certains champs si besoin
+    date_of_birth = graphene.String(name="dateOfBirth")
+    profile_picture = graphene.String(name="profilePicture")
+
     class Meta:
         model = CustomUser
         fields = '__all__'
 
-# Mutation pour l'enregistrement d'un nouvel utilisateur
+    def resolve_date_of_birth(self, info):
+        # Convertir date en string YYYY-MM-DD
+        if self.date_of_birth:
+            return self.date_of_birth.strftime("%Y-%m-%d")
+        return None
+
+    def resolve_profile_picture(self, info):
+        return self.profile_picture
+
+
 class RegisterUser(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
@@ -27,17 +38,15 @@ class RegisterUser(graphene.Mutation):
         name = graphene.String()
         matricule = graphene.String()
         gender = graphene.String()
-        date_of_birth = graphene.String()  # format string "YYYY-MM-DD"
-        profile_picture = graphene.String()
+        date_of_birth = graphene.String(name="dateOfBirth")
+        profile_picture = graphene.String(name="profilePicture")
 
     def mutate(self, info, email, password, name=None, matricule=None, gender=None, date_of_birth=None, profile_picture=None):
         check_authentication(info, must_be_authenticated=False)
 
-        # Validation email
         if CustomUser.objects.filter(email=email).exists():
             raise GraphQLError("Email: Email already in use.")
 
-        # Validation date de naissance
         parsed_birth_date = None
         if date_of_birth:
             try:
@@ -49,7 +58,6 @@ class RegisterUser(graphene.Mutation):
             age = today.year - parsed_birth_date.year - (
                 (today.month, today.day) < (parsed_birth_date.month, parsed_birth_date.day)
             )
-
             if age < 18:
                 raise GraphQLError("Date of Birth: User must be at least 18 years old.")
             if age > 200:
@@ -77,24 +85,18 @@ class LoginUser(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
         password = graphene.String(required=True)
-        remember_me = graphene.Boolean(required=False, default_value=False)  # 🆕
-        
+        remember_me = graphene.Boolean(required=False, default_value=False)
 
     def mutate(self, info, email, password, remember_me):
         check_authentication(info, must_be_authenticated=False)
 
         user = authenticate(username=email, password=password)
-        
         if user is not None:
             login(info.context, user)
-            
-          
-
-            # ⏱️ Définir la durée de session selon remember_me
             if remember_me:
-                info.context.session.set_expiry(1209600)  # 2 semaines
+                info.context.session.set_expiry(1209600)  # 2 weeks
             else:
-                info.context.session.set_expiry(86400)  # 86400 secondes = 1 jour
+                info.context.session.set_expiry(86400)  # 1 day
 
             return LoginUser(
                 success=True,
@@ -105,20 +107,16 @@ class LoginUser(graphene.Mutation):
             return LoginUser(success=False, message="Invalid credentials")
 
 
-# Mutation pour la déconnexion de l'utilisateur
 class LogoutUser(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
     details = graphene.String()
-    
+
     def mutate(self, info):
-        # Vérification de l'authentification
         user = check_authentication(info, must_be_authenticated=True)
-        
-        # Déconnecter l'utilisateur
-        logout(info.context)  # Cela supprime la session de l'utilisateur
-        
+        logout(info.context)
         return LogoutUser(success=True, message="Logout successful.", details=f"User {user.name} with ID {user.id} has logged out.")
+
 
 class UpdateUserProfile(graphene.Mutation):
     success = graphene.Boolean()
@@ -130,24 +128,20 @@ class UpdateUserProfile(graphene.Mutation):
         matricule = graphene.String()
         gender = graphene.String()
         email = graphene.String()
-        date_of_birth = graphene.String()
-        profile_picture = graphene.String()
+        date_of_birth = graphene.String(name="dateOfBirth")
+        profile_picture = graphene.String(name="profilePicture")
 
     def mutate(self, info, name=None, matricule=None, gender=None, email=None, date_of_birth=None, profile_picture=None):
-        # Récupérer l'utilisateur actuel depuis le contexte
         user = info.context.user
-        
         if user.is_anonymous:
             raise GraphQLError("Not logged in!")
-        
-        # Si une date de naissance est spécifiée, convertir le format
+
         if date_of_birth:
             try:
                 date_of_birth = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
             except ValueError:
                 raise GraphQLError("Invalid date format. Expected: YYYY-MM-DD.")
-        
-        # Mettre à jour les champs de l'utilisateur
+
         user.name = name if name is not None else user.name
         user.matricule = matricule if matricule is not None else user.matricule
         user.gender = gender if gender is not None else user.gender
@@ -159,44 +153,29 @@ class UpdateUserProfile(graphene.Mutation):
         return UpdateUserProfile(success=True, message="Profile updated successfully", user=user)
 
 
-# Mutation pour la suppression du compte utilisateur
 class DeleteUserAccount(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
 
     class Arguments:
-        user_id = graphene.Int(required=True)
+        user_id = graphene.Int(required=True, name="userId")
 
     def mutate(self, info, user_id):
-        # Vérification de l'authentification
         user = check_authentication(info, must_be_authenticated=True)
-        
-        # Vérification que l'utilisateur a les droits pour supprimer ce compte
         if user.id != user_id:
             raise GraphQLError("You are not authorized to delete this account.")
-        
         try:
             user_to_delete = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
             raise GraphQLError("User not found.")
-        
         user_to_delete.delete()
-
         return DeleteUserAccount(success=True, message="Account deleted successfully.")
 
-# Définir les Mutations globales
-class Mutation(graphene.ObjectType):
-    register_user = RegisterUser.Field()
-    login_user = LoginUser.Field()
-    logout_user = LogoutUser.Field()
-    update_user_profile = UpdateUserProfile.Field()
-    delete_user_account = DeleteUserAccount.Field()
 
-# Définir les Queries globales
 class Query(graphene.ObjectType):
     user = graphene.Field(UserType, id=graphene.Int(required=True))
     all_users = graphene.List(UserType)
-    me = graphene.Field(UserType)  # Ajouter cette ligne pour la query `me`
+    me = graphene.Field(UserType)
 
     def resolve_user(self, info, id):
         try:
@@ -206,12 +185,20 @@ class Query(graphene.ObjectType):
 
     def resolve_all_users(self, info):
         return CustomUser.objects.all()
-    
+
     def resolve_me(self, info):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError("Not logged in!")
         return user
 
-# Définir le schéma principal
+
+class Mutation(graphene.ObjectType):
+    register_user = RegisterUser.Field()
+    login_user = LoginUser.Field()
+    logout_user = LogoutUser.Field()
+    update_user_profile = UpdateUserProfile.Field()
+    delete_user_account = DeleteUserAccount.Field()
+
+
 schema = graphene.Schema(query=Query, mutation=Mutation)

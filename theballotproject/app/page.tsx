@@ -1,18 +1,34 @@
-// page.tsx
+"use client";
 
-"use client"; // Marquer ce fichier comme composant client
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Importer depuis 'next/navigation' au lieu de 'next/router'
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@apollo/client";
+import { ME_QUERY } from "@/lib/mutations/userMutations";
 
 const HomePageRedirect: React.FC = () => {
   const router = useRouter();
 
-  useEffect(() => {
-    router.push('/auth'); // Rediriger vers le fichier public
-  }, [router]);
+  const { data, loading, error } = useQuery(ME_QUERY, {
+    fetchPolicy: "network-only",
+  });
 
-  return null; // Pas de rendu nécessaire, juste une redirection
+  useEffect(() => {
+    console.log("ME_QUERY - loading:", loading);
+    console.log("ME_QUERY - data:", data);
+    console.log("ME_QUERY - error:", error);
+
+    if (!loading) {
+      if (data?.me) {
+        router.push("/elections");
+      } else {
+        router.push("/auth");
+      }
+    }
+  }, [loading, data, error, router]);
+
+  if (loading) return <div>Chargement...</div>;
+
+  return null;
 };
 
 export default HomePageRedirect;
