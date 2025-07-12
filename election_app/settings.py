@@ -114,7 +114,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'electionapp',
-        'HOST': 'localhost\\SQLEXPRESS01',
+        'HOST': 'DESKTOP-IIMUDN9\\SQLEXPRESS',
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'TrustServerCertificate': 'yes',

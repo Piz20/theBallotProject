@@ -24,10 +24,10 @@ def initialize_genai_client(api_key):
         raise ValueError("GEMINI_API_KEY not found. Please set it in your .env file.")
     return genai.Client(api_key=api_key)
 
-client = initialize_genai_client(GEMINI_API_KEY)
+client = initialize_genai_client("AIzaSyA_LLcHUt9wGtdX7wDOAbwtB5y4pzj9drY")
 
 # Connexion à SQL Server
-server = 'localhost\\SQLEXPRESS01'
+server = 'DESKTOP-IIMUDN9\\SQLEXPRESS'
 database = 'electionapp'
 connection_string = f"mssql+pyodbc://@{server}/{database}?trusted_connection=yes&driver=ODBC+Driver 17 for SQL Server"
 engine = create_engine(connection_string)

@@ -31,7 +31,7 @@ const ElectionCard: React.FC<ElectionCardProps> = ({ election }) => {
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-500">
-              {Array.isArray(election.eligibleVoters) ? election.eligibleVoters.length : 0} eligible voters
+              {Array.isArray(election.eligibleEmails) ? election.eligibleEmails.length : 0} eligible voters
             </span>
           </div>
           <button className="text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
@@ -41,8 +41,8 @@ const ElectionCard: React.FC<ElectionCardProps> = ({ election }) => {
         </div>
         <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
           <div className="flex justify-between">
-            <span>Start: {new Date(election.startDate).toLocaleDateString()}</span>
-            <span>End: {new Date(election.endDate).toLocaleDateString()}</span>
+            <span>Start: {new Date(election.startDate ?? '').toLocaleDateString()}</span>
+            <span>End: {new Date(election.endDate ?? '').toLocaleDateString()}</span>
           </div>
         </div>
       </div>
