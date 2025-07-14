@@ -24,7 +24,7 @@ def initialize_genai_client(api_key):
         raise ValueError("GEMINI_API_KEY not found. Please set it in your .env file.")
     return genai.Client(api_key=api_key)
 
-client = initialize_genai_client("AIzaSyA_LLcHUt9wGtdX7wDOAbwtB5y4pzj9drY")
+client = initialize_genai_client("AIzaSyBDXE7XuiFnWPU5z9Y2E8zoCIxR2Ix7jqc")
 
 # Connexion à SQL Server
 server = 'DESKTOP-IIMUDN9\\SQLEXPRESS'

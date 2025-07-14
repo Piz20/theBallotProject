@@ -96,7 +96,7 @@ export default function ElectionPage() {
   const { loading, error, data } = useQuery(GET_ALL_ELECTIONS);
 
   const { data: statsData, loading: statsLoading, error: statsError } = useQuery(AUTO_DASHBOARD_STATS_QUERY, {
-    pollInterval: 2000, // fetch toutes les 2 secondes
+    pollInterval: 20000000000, // fetch toutes les 2 secondes
   });
 
   const [elections, setElections] = useState<Election[]>([]);
