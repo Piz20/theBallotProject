@@ -7,7 +7,7 @@ certifi==2025.1.31
 cffi==1.17.1
 charset-normalizer==3.4.1
 colorama==0.4.6
-cryptography==43.0.3
+cryptography==44.0.1
 defusedxml==0.8.0rc2
 distro==1.9.0
 Django==5.1.5
@@ -32,7 +32,7 @@ googleapis-common-protos==1.67.0rc1
 grpc-google-iam-v1==0.14.0
 grpcio==1.70.0
 grpcio-status==1.70.0
-h11==0.14.0
+h11==0.16.0
 httpcore==1.0.7
 httplib2==0.22.0
 httpx==0.28.1
@@ -45,7 +45,7 @@ openai==1.61.1
 packaging==24.2
 pillow==11.1.0
 proto-plus==1.26.0
-protobuf==5.29.3
+protobuf==5.29.5
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
@@ -56,7 +56,7 @@ pyparsing==3.2.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python3-openid==3.2.0
-requests==2.32.3
+requests==2.32.4
 requests-oauthlib==2.0.0
 rsa==4.9
 shapely==2.0.7
@@ -69,5 +69,5 @@ tqdm==4.67.1
 typing_extensions==4.12.2
 tzdata==2025.1
 uritemplate==4.1.1
-urllib3==2.3.0
+urllib3==2.5.0
 websockets==14.2
