@@ -6,6 +6,7 @@ import graphene
 import pandas as pd
 from dotenv import load_dotenv
 from election_app.api.graphql.utils import reformat_result
+from election_app.config import DB_SERVER_NAME, DB_NAME, GEMINI_API_KEY
 from google import genai
 from graphene.types.generic import GenericScalar
 from sqlalchemy import create_engine, text
@@ -14,9 +15,6 @@ import decimal
 # Load environment variables
 load_dotenv()
 
-# Gemini API Key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 # Initialisation du client Gemini
 def initialize_genai_client(api_key):
     # Added a check for GEMINI_API_KEY to ensure it's not None
@@ -24,12 +22,18 @@ def initialize_genai_client(api_key):
         raise ValueError("GEMINI_API_KEY not found. Please set it in your .env file.")
     return genai.Client(api_key=api_key)
 
-client = initialize_genai_client("AIzaSyBDXE7XuiFnWPU5z9Y2E8zoCIxR2Ix7jqc")
+client = initialize_genai_client(GEMINI_API_KEY)
 
 # Connexion à SQL Server
-server = 'DESKTOP-IIMUDN9\\SQLEXPRESS'
-database = 'electionapp'
-connection_string = f"mssql+pyodbc://@{server}/{database}?trusted_connection=yes&driver=ODBC+Driver 17 for SQL Server"
+# Utilisation des variables centralisées depuis settings.py
+server = DB_SERVER_NAME
+database = DB_NAME
+
+# Pour SQLAlchemy avec pyodbc, nous devons échapper correctement les backslashes
+# Remplacer \\ par \ pour la chaîne de connexion
+server_escaped = server.replace('\\\\', '\\')
+connection_string = f"mssql+pyodbc://@{server_escaped}/{database}?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
+
 engine = create_engine(connection_string)
 
 # Function to dynamically get the database schema (simplified to just tables and columns)

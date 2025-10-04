@@ -1,52 +1,23 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 from datetime import timedelta  # Importer timedelta
 from corsheaders.defaults import default_headers  # Import default_headers
 
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
 
-# Ton secret key pour signer le JWT
-
-# Other settings...
-
-SECRET_KEY = "LEbIgPiz20"
-SITE_URL = "http://127.0.0.1:8000"  # URL de ton site en local
-LOCAL_TUNNEL_URL = "https://theballotproject.loca.lt"  # URL de ton site sur ngrok
+# Importer la configuration centralisée
+from election_app.config import *
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/elections/'  # URL vers laquelle rediriger après la connexion
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-tempkey')
-
-DEBUG = True
-
-EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
-DEFAULT_FROM_EMAIL = "eminiantpisani@gmail.com"
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'theballotproject.loca.lt']
-
 # Session Cookie settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Utiliser la base de données pour stocker les sessions
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 jours en secondes
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Expirer la session lorsque l'utilisateur ferme le navigateur
-SESSION_SAVE_EVERY_REQUEST = True  # Sauvegarde la session à chaque requête
-# Si tu veux un système de token, utilise un cookie sécurisé
-CSRF_COOKIE_SECURE = True  # Assure-toi d'utiliser HTTPS pour les cookies CSRF
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://theballotproject.loca.lt',
-    'http://localhost:8000',
-    'http://localhost:3000',
-]
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    'http://localhost:8080',
-    'http://localhost:3000',  # Ajoute cette ligne pour autoriser ton frontend local
-]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -113,8 +84,8 @@ WSGI_APPLICATION = 'election_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'electionapp',
-        'HOST': 'DESKTOP-IIMUDN9\\SQLEXPRESS',
+        'NAME': DB_NAME,
+        'HOST': DB_SERVER_NAME,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'TrustServerCertificate': 'yes',
